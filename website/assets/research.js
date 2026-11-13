@@ -55,6 +55,23 @@
       });
     });
   }
+  // What-if path on the default dataset (Google 2023, calibrated).
+  const GOOGLE_STEPS = [
+    ["2023 baseline", {}],
+    ["+ 100 % carbon-free electricity", { renewablePct: 100 }],
+    ["+ 50 % water reuse", { renewablePct: 100, waterReuse: 50 }],
+    ["+ setpoint raised 2 °C", { renewablePct: 100, waterReuse: 50, setpointDelta: 2 }],
+    ["+ 10 % server consolidation", { renewablePct: 100, waterReuse: 50, setpointDelta: 2, itReduction: 10 }],
+  ];
+  function googlePath() {
+    return once("googlePath", () => {
+      const rows = G.generateGoogleDataset(), prof = G.profileGoogle();
+      return GOOGLE_STEPS.map(([label, lv]) => {
+        const c = G.compareScenario(rows, prof, Object.assign({ renewablePct: prof.renewablePct }, lv));
+        return { label, levers: lv, score: c.scen.green.score, grade: c.scen.green.grade.grade, delta: c.delta };
+      });
+    });
+  }
   function karachiCase() {
     return once("karachi", () => {
       const sc = SCENARIOS[1], a = scenarioData(sc.gen), b = scenarioData(sc.alt);
@@ -75,6 +92,12 @@
     });
   }
   function openScenario(id, stepIndex) {
+    if (id === "google") {
+      const prof = G.profileGoogle();
+      A.applySnapshot({ app: "GreenDC", version: 1, source: "Google 2023", gen: Object.assign({}, G.GOOGLE_GEN), rows: null, profile: prof, weights: G.DEFAULT_WEIGHTS, levers: Object.assign({}, G.DEFAULT_LEVERS, { renewablePct: prof.renewablePct }, GOOGLE_STEPS[stepIndex][1]) });
+      location.hash = "#simulator";
+      return;
+    }
     const sc = SCENARIOS.find((x) => x.id === id);
     let gen = sc.gen, patch = sc.profile, levers = sc.levers || {};
     if (id === "ashburn") levers = sc.steps[stepIndex == null ? sc.steps.length - 1 : stepIndex][1];
@@ -152,6 +175,8 @@
 
     // Scenario case studies
     // Scenario case studies
+    const gp = googlePath();
+    $("#scn-google").innerHTML = `<thead><tr><th>Step</th><th class="n">GreenScore</th><th>Grade</th><th class="n">Energy saved</th><th class="n">CO₂e avoided</th><th class="n">Water saved</th><th></th></tr></thead><tbody>${gp.map((p, i) => `<tr><td>${esc(p.label)}</td><td class="n">${fmt(p.score, 1)}</td><td>${p.grade}</td><td class="n">${fmt(p.delta.energyMWh / 1e3, 0)} GWh</td><td class="n">${fmt(p.delta.co2T / 1e6, 2)} Mt</td><td class="n">${fmt(p.delta.waterM3 / 1e6, 1)} million m³</td><td><button class="btn small" type="button" data-scn="google" data-step="${i}">Open</button></td></tr>`).join("")}</tbody>`;
     const path = ashburnPath(), kc = karachiCase(), best = bestCase();
     $("#scn-ashburn").innerHTML = `<thead><tr><th>Step</th><th class="n">GreenScore</th><th>Grade</th><th class="n">MWh saved/yr</th><th class="n">tCO₂e avoided/yr</th><th class="n">m³ water saved/yr</th><th></th></tr></thead><tbody>${path.map((p, i) => `<tr><td>${esc(p.label)}</td><td class="n">${fmt(p.score, 1)}</td><td>${p.grade}</td><td class="n">${fmt0(p.delta.energyMWh)}</td><td class="n">${fmt0(p.delta.co2T)}</td><td class="n">${fmt0(p.delta.waterM3)}</td><td><button class="btn small" type="button" data-scn="ashburn" data-step="${i}">Open</button></td></tr>`).join("")}</tbody>`;
     $("#scn-karachi").innerHTML = `<thead><tr><th>Configuration</th><th class="n">GreenScore</th><th>Grade</th><th class="n">Water</th><th class="n">Cooling</th><th class="n">Location</th><th></th></tr></thead><tbody>${kc.map((p, i) => `<tr><td>${esc(p.label)}</td><td class="n">${fmt(p.score, 1)}</td><td>${p.grade}</td><td class="n">${fmt(p.scores.water.score, 0)}</td><td class="n">${fmt(p.scores.cooling.score, 0)}</td><td class="n">${fmt(p.scores.location.score, 0)}</td><td><button class="btn small" type="button" data-scn="karachi" data-step="${i}">Open</button></td></tr>`).join("")}</tbody>`;
@@ -310,7 +335,7 @@
   function slides() {
     const r = A.state.result, k = r.metrics.kpis;
     const pub = publicResults();
-    const path = ashburnPath(), kc = karachiCase(), best = bestCase();
+    const path = ashburnPath(), kc = karachiCase(), best = bestCase(), gpath = googlePath();
     const mc = mcResult("uniform");
     const b = bench(3.5);
     const tests = G.selfTest();
@@ -325,7 +350,7 @@
       { title: "Real-world case: Google, 2023", link: "cases", html: (function () { const g = pub[0]; return `<div class="s-flow" style="grid-template-columns:repeat(4,minmax(0,1fr))">${[["Published", "24 TWh · PUE 1.10 · 6.1 bn gal water · 64 % carbon-free"], ["Indicators", `WUE ${fmt(g.kpis.wue, 2)} L/kWh · CUE ${fmt(g.kpis.cue, 3)} kg/kWh`], ["Scores", `Energy ${fmt(g.scores.energy.score, 0)} · Water ${fmt(g.scores.water.score, 0)} · Carbon ${fmt(g.scores.carbon.score, 0)}`], ["GreenScore", `${fmt(g.green.score, 1)} · grade ${g.green.grade.grade}`]].map((x, n) => `<div><b>${n + 1}</b><span>${x[0]}</span><small class="s-flow-note">${x[1]}</small></div>`).join("")}</div><p class="s-note">Partial GreenScore over the energy, water and carbon dimensions that Google publishes (65 % of the weight). Energy is at the top of the scale, water is the weakest dimension, and 100 % carbon-free electricity would lift the score to about 90 (A+).</p>`; })() },
       { title: "Location matters", link: "location", html: `<div class="s-bars">${locs.map((l) => `<div><span>${esc(l.name)}</span><div class="bar"><i style="width:${l.gs}%;background:var(--c-location)"></i></div><b>${fmt(l.gs, 1)}</b></div>`).join("")}</div><p class="s-note">The same 2 MW facility with evaporative cooling, simulated for one year in eight regions. Grid carbon, water stress and climate alone move the GreenScore by more than 50 points.</p>` },
       { title: "Anomaly detection works better with weather adjustment", link: "evaluation", html: `<table class="s-table"><thead><tr><th>Indicator</th>${Object.values(G.DETECTION_METHODS).map((m) => `<th>${m}</th>`).join("")}</tr></thead><tbody>${["pue", "noise", "wue", "other"].map((m) => `<tr><td>${G.ANOMALY_TARGETS[m].label}</td>${Object.keys(G.DETECTION_METHODS).map((x) => `<td>F1 ${fmt(b.table[m][x].f1, 2)}</td>`).join("")}</tr>`).join("")}</tbody></table><p class="s-note">${b.datasets} simulated years (8 locations × 5 seeds) with injected faults as ground truth, threshold 3.5. Removing the temperature effect first means hot days are not mistaken for cooling faults.</p>` },
-      { title: "What-if: Ashburn from C to A", link: "simulator", html: `<table class="s-table"><thead><tr><th>Step</th><th>GreenScore</th><th>MWh/yr</th><th>tCO₂e/yr</th><th>m³/yr</th></tr></thead><tbody>${path.map((p) => `<tr><td>${esc(p.label)}</td><td><b>${fmt(p.score, 1)}</b> ${p.grade}</td><td>${fmt0(p.delta.energyMWh)}</td><td>${fmt0(p.delta.co2T)}</td><td>${fmt0(p.delta.waterM3)}</td></tr>`).join("")}</tbody></table><p class="s-note">Karachi: evaporative ${fmt(kc[0].score, 1)} (${kc[0].grade}) → liquid cooling with the same upgrades ${fmt(kc[3].score, 1)} (${kc[3].grade}). Upper bound of the scale: ${fmt(best.score, 1)} (${best.grade}).</p>` },
+      { title: "What-if: improving Google's 2023 result", link: "simulator", html: `<table class="s-table"><thead><tr><th>Step</th><th>GreenScore</th><th>Energy saved</th><th>CO₂e avoided</th><th>Water saved</th></tr></thead><tbody>${gpath.map((p) => `<tr><td>${esc(p.label)}</td><td><b>${fmt(p.score, 1)}</b> ${p.grade}</td><td>${fmt(p.delta.energyMWh / 1e3, 0)} GWh</td><td>${fmt(p.delta.co2T / 1e6, 2)} Mt</td><td>${fmt(p.delta.waterM3 / 1e6, 1)} M m³</td></tr>`).join("")}</tbody></table><p class="s-note">Annual savings on Google's calibrated 2023 data. Carbon-free supply is the largest single gain; water reuse is next. In the simulated examples, a typical 2 MW facility in Ashburn rises from C (${fmt(path[0].score, 1)}) to A (${fmt(path[path.length - 1].score, 1)}), and one in Karachi needs liquid cooling to reach A (${fmt(kc[3].score, 1)}).</p>` },
       { title: "Is the GreenScore robust?", link: "sensitivity", html: `<div class="s-stats"><div><b>${fmt(mc.meanSpearman, 2)}</b><span>mean Spearman ρ of location rankings over ${fmt0(mc.draws)} random weightings</span></div><div><b>${pct(mc.items.find((i) => i.baseRank === 1).keepRank)}</b><span>of draws keep the same top-ranked site</span></div><div><b>±${fmt((function () { const a = G.anchorSensitivity(r.metrics, A.state.weights, { pct: 10, draws: 400 }); return (a.p95 - a.p5) / 2; })(), 1)}</b><span>GreenScore points when every benchmark anchor moves ±10 %</span></div></div><p class="s-note">Rankings are stable even when every weighting is equally likely, so the conclusions do not depend on one choice of weights.</p>` },
       { title: "Verification", link: "methodology", html: `<div class="s-stats"><div><b>${tests.filter((t) => t.pass).length} / ${tests.length}</b><span>hand-calculated checks pass, live in the browser</span></div><div><b>1e-9</b><span>agreement between the Python and JavaScript implementations</span></div><div><b>14</b><span>references, with standard indicators separated from framework-defined scores</span></div></div>` },
       { title: "Limitations and future work", html: `<div class="s-two"><div><h3>Limitations</h3><ul class="s-list small"><li>Daily, simulated operating data; public cases cover 3 of 6 dimensions</li><li>Market-based emissions use the grid average, not residual mixes</li><li>Water stress and tariffs are indicative</li><li>Simple free-field noise model</li></ul></div><div><h3>Future work</h3><ul class="s-list small"><li>Real-time sensor feeds (hourly data)</li><li>Many sites in one portfolio view</li><li>Regional datasets: Aqueduct basins, residual mixes, hourly grid carbon</li><li>Usability study with data centre operators</li></ul></div></div>` },
@@ -373,13 +398,13 @@
     if (!el) return;
     const pub = publicResults();
     const tests = G.selfTest();
-    const b = cache["bench-3.5"], mc = cache["mc-uniform"], path = cache.ashburn;
+    const b = cache["bench-3.5"], mc = cache["mc-uniform"], gp = cache.googlePath;
     const card = (href, value, label, note) => `<a class="hl" href="#${href}"><b>${value}</b><span>${label}</span><small>${note}</small></a>`;
     el.innerHTML = [
       card("cases", `${fmt(pub[0].green.score, 1)} ${pub[0].green.grade.grade}`, "Google case study", "published 2023 figures scored step by step (energy, water, carbon)"),
       card("evaluation", b ? `F1 ${fmt(b.table.pue.residual.f1, 2)}` : "…", "Weather-adjusted detection", b ? `against ${fmt(b.table.pue.rolling.f1, 2)} for a rolling z-score, ${b.datasets} simulated years` : "calculating the benchmark"),
       card("sensitivity", mc ? `ρ ${fmt(mc.meanSpearman, 2)}` : "…", "Robust to weights", mc ? `mean rank correlation over ${fmt0(mc.draws)} random weightings` : "calculating"),
-      card("cases", path ? `${path[0].grade} → ${path[path.length - 1].grade}` : "…", "Ashburn what-if", path ? `${fmt(path[0].score, 1)} → ${fmt(path[path.length - 1].score, 1)} in four steps` : "calculating"),
+      card("simulator", gp ? `${gp[0].grade} → ${gp[gp.length - 1].grade}` : "…", "Google what-if", gp ? `${fmt(gp[0].score, 1)} → ${fmt(gp[gp.length - 1].score, 1)} with carbon-free power, water reuse and efficiency` : "calculating"),
       card("methodology", `${tests.filter((t) => t.pass).length}/${tests.length}`, "Verification checks", "hand calculations pass live; Python and JavaScript agree"),
     ].join("");
   }
@@ -396,7 +421,7 @@
   // Compute the slower research results in the background after load, one at a
   // time, so the Evaluation and Presentation pages open instantly.
   function warmUp() {
-    const jobs = [ashburnPath, karachiCase, bestCase, locationItems, () => mcResult("uniform"), () => bench(3.5), () => once("sweep-pue", () => Object.keys(G.DETECTION_METHODS).map((m) => G.detectionSweep("pue", m)))];
+    const jobs = [googlePath, ashburnPath, karachiCase, bestCase, locationItems, () => mcResult("uniform"), () => bench(3.5), () => once("sweep-pue", () => Object.keys(G.DETECTION_METHODS).map((m) => G.detectionSweep("pue", m)))];
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
     const next = () => {
       const job = jobs.shift();

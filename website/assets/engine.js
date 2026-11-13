@@ -222,7 +222,7 @@
 
       // Fan law: sound power changes by 50·log10(speed ratio)
       const fanSpeed = clamp(0.55 + 0.45 * (1 - f) * clamp((temp + 5) / 40, 0, 1) + 0.15 * util, 0.3, 1.1);
-      let noise = soundPressureAt(lwTotal + 50 * Math.log10(fanSpeed), loc.distanceM) + gaussian(rand) * 0.8;
+      let noise = soundPressureAt(lwTotal + 50 * Math.log10(fanSpeed), o.distanceM || loc.distanceM) + gaussian(rand) * 0.8;
       const gridCI = loc.gridCI * (1 + 0.06 * Math.sin((2 * Math.PI * doy) / 365) + gaussian(rand) * 0.04);
 
       const ev = events[d] || "";
@@ -249,6 +249,46 @@
   }
 
   function round(v, n) { const p = Math.pow(10, n); return Math.round(v * p) / p; }
+
+  /* ---------------------------------------------------------- *
+   * 3b. Google 2023, calibrated to published annual totals
+   * ---------------------------------------------------------- *
+   * Google publishes yearly fleet totals, not daily data. This builds a
+   * daily dataset whose ANNUAL totals equal Google's published 2023
+   * figures exactly (24 TWh, PUE 1.10, 6.1 billion gallons of water, US
+   * average grid 393 g/kWh). The day-to-day pattern (weather, load,
+   * injected faults) comes from the simulator for a 100 MW hyperscale
+   * campus in a US mid-Atlantic climate, then every day is scaled by the
+   * same factors so the shape is kept and the totals match.
+   */
+  const GOOGLE_GEN = { preset: "google", location: "virginia", coolingSystem: "evaporative", itCapacityMW: 100, coolingUnits: 50, distanceM: 1500, economiserAdoption: 0.6, days: 365, seed: 42, injectAnomalies: true, startDate: "2023-01-01" };
+  function generateGoogleDataset(opts) {
+    const gen = Object.assign({}, GOOGLE_GEN, opts || {}, { days: 365, startDate: "2023-01-01" });
+    const rows = generateDataset(gen);
+    const T = GOOGLE_2023;
+    const itTarget = (T.energyTWh * 1e9) / T.pue;
+    const ohTarget = T.energyTWh * 1e9 - itTarget;
+    const waterTarget = T.waterBillionGal * 1e9 * 3.78541;
+    const sIT = sum(rows.map((r) => r.it_kwh)), sOH = sum(rows.map((r) => r.cooling_kwh + r.other_kwh)), sW = sum(rows.map((r) => r.water_l));
+    const kIT = itTarget / sIT, kOH = ohTarget / sOH, kW = waterTarget / sW;
+    const scaled = rows.map((r) => Object.assign({}, r, { it_kwh: r.it_kwh * kIT, cooling_kwh: r.cooling_kwh * kOH, other_kwh: r.other_kwh * kOH, water_l: r.water_l * kW }));
+    // Scale grid intensity so the energy-weighted average is the published 393 g/kWh.
+    const tot = (r) => r.it_kwh + r.cooling_kwh + r.other_kwh;
+    const wci = sum(scaled.map((r) => tot(r) * r.grid_ci)) / sum(scaled.map(tot));
+    const kCI = T.gridCI / wci;
+    return scaled.map((r) => Object.assign(r, {
+      it_kwh: round(r.it_kwh, 0), cooling_kwh: round(r.cooling_kwh, 0), other_kwh: round(r.other_kwh, 0),
+      water_l: round(r.water_l, 0), grid_ci: round(r.grid_ci * kCI, 3),
+    }));
+  }
+  function profileGoogle() {
+    return Object.assign(profileFromLocation("virginia", "evaporative"), {
+      locationKey: "virginia", preset: "google",
+      name: "Google data centre fleet · 2023",
+      gridCI: GOOGLE_2023.gridCI, renewablePct: GOOGLE_2023.renewablePct, gridRenewablePct: 23,
+      distanceM: GOOGLE_GEN.distanceM,
+    });
+  }
 
   /* ---------------------------------------------------------- *
    * 4. Acoustics
@@ -949,6 +989,7 @@
 
   return {
     ASSUMPTIONS, selfTest, REGIONAL_SOURCES, PUBLIC_CASES, GOOGLE_2023, INDUSTRY_REFERENCE, analyseAnnual,
+    GOOGLE_GEN, generateGoogleDataset, profileGoogle,
     weightOAT, monteCarloWeights, anchorSensitivity, spearman, ranks, dirichlet,
     ANOMALY_TARGETS, DETECTION_METHODS, benchmarkDetection, detectionSweep,
     SUS_ITEMS, susScore, susAdjective,

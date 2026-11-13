@@ -18,12 +18,17 @@ GreenDC assesses data centre sustainability across six dimensions (energy, water
 | `website/assets/vendor/` | Bundled Chart.js 4.4.1 (MIT) and IBM Plex fonts (OFL), so the site works offline |
 | `python/greendc.py` | Python reference implementation (standard library only) |
 | `tests/` | Node and Python test suites, including JavaScript/Python parity |
+| `data/google_2023_calibrated.csv` | The website's default dataset: daily rows whose yearly totals equal Google's published 2023 figures |
 | `data/sample_dataset.csv` | One simulated year (Ashburn, 2 MW, evaporative cooling) with injected faults |
 | `data/scenarios/*.json` | Importable project files: Ashburn C → A, Karachi liquid retrofit, best case |
 | `scripts/make_scenarios.js` | Regenerates the sample dataset and scenario files |
 | `docs/PRESENTATION_GUIDE.md` | Talk outline, demo script, likely questions with answers, key numbers |
 | `.github/workflows/pages.yml` | Runs the tests on every push; can also publish `website/` when Pages uses GitHub Actions |
 | `index.html`, `.nojekyll` | Forward the repository root to the website when Pages deploys from a branch |
+
+## Default data: Google, 2023
+
+The website opens on Google's data centre fleet for 2023. The yearly totals match Google's published figures exactly: 24 TWh of electricity, PUE 1.10, 6.1 billion gallons of water, 64 % carbon-free electricity, and the US grid average of 393 g CO₂/kWh. Google publishes yearly totals only, so the day-to-day pattern (weather, load, injected test faults), noise and site details are modelled, then scaled so the totals match. The result is a GreenScore of 82.1 (grade A). Scoring the published figures alone gives 81.7. The tests check that the totals match and that Python and JavaScript agree on this dataset.
 
 ## Website pages
 

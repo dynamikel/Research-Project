@@ -232,6 +232,7 @@ tbody tr:hover td { background: var(--surface-2); }
 .hero h1 { font-size: var(--step-4); letter-spacing: -0.02em; }
 .hero h1 span { color: var(--accent); }
 .hero .lede { margin-top: 10px; }
+.data-source { margin-top: 12px; font-size: 0.85rem; color: var(--ink-2); max-width: 70ch; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 var(--r) var(--r) 0; }
 .gauge { width: 100%; max-width: 300px; justify-self: center; }
 .gauge .g-num { font-family: var(--f-mono); }
 .dims { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }

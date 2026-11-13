@@ -55,6 +55,11 @@ LOCATIONS = {
     "sydney": dict(grid_ci=554, renewable_pct=30, grid_renewable_pct=35, water_stress=2.5, distance_m=300, noise_limit=50, price_kwh=0.18, price_water_m3=2.4),
 }
 
+# Google data centre fleet 2023 (default dataset of the website). Grid, renewables
+# and distance as used by profileGoogle() in engine.js; other values indicative.
+GOOGLE_2023_PROFILE = dict(grid_ci=393, renewable_pct=64, grid_renewable_pct=23, water_stress=2.1,
+                           distance_m=1500, noise_limit=50, price_kwh=0.08, price_water_m3=1.6)
+
 CARBON_PRICE_PER_T = 85.0
 WATER_ENERGY_FACTOR = 1.8  # litres consumed at the power plant per kWh generated
 
@@ -305,6 +310,7 @@ def main():
     ap = argparse.ArgumentParser(description="GreenDC sustainability assessment")
     ap.add_argument("csv")
     ap.add_argument("--location", choices=sorted(LOCATIONS), help="use a regional preset")
+    ap.add_argument("--google", action="store_true", help="use the Google 2023 profile (for data/google_2023_calibrated.csv)")
     ap.add_argument("--grid-ci", type=float)
     ap.add_argument("--renewable", type=float)
     ap.add_argument("--water-stress", type=float)
@@ -313,7 +319,7 @@ def main():
     ap.add_argument("--json", action="store_true", help="print the full report as JSON")
     a = ap.parse_args()
 
-    p = Profile(**LOCATIONS[a.location]) if a.location else Profile()
+    p = Profile(**GOOGLE_2023_PROFILE) if a.google else Profile(**LOCATIONS[a.location]) if a.location else Profile()
     for attr, val in [("grid_ci", a.grid_ci), ("renewable_pct", a.renewable), ("water_stress", a.water_stress),
                       ("distance_m", a.distance), ("noise_limit", a.noise_limit)]:
         if val is not None:

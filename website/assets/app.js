@@ -5,14 +5,17 @@
   const $ = (sel, el) => (el || document).querySelector(sel);
   const $$ = (sel, el) => Array.from((el || document).querySelectorAll(sel));
 
+  // Default settings for the simulator (used when a project is not Google's dataset).
+  const SIM_GEN = { location: "virginia", coolingSystem: "evaporative", itCapacityMW: 2, economiserAdoption: 0.6, days: 365, seed: 42, injectAnomalies: true };
+
   /* ---------------- state ---------------- */
   const state = {
-    gen: { location: "virginia", coolingSystem: "evaporative", itCapacityMW: 2, economiserAdoption: 0.6, days: 365, seed: 42, injectAnomalies: true },
+    gen: Object.assign({}, G.GOOGLE_GEN),
     rows: [],
     profile: null,
     weights: Object.assign({}, G.DEFAULT_WEIGHTS),
     levers: Object.assign({}, G.DEFAULT_LEVERS),
-    source: "Simulated",
+    source: "Google 2023",
     result: null,
     page: "overview",
   };
@@ -24,8 +27,11 @@
     return Number(v).toLocaleString("en-US", { minimumFractionDigits: n, maximumFractionDigits: n });
   }
   const fmt0 = (v) => fmt(v, 0);
+  // Energy given in MWh, shown in the most readable unit.
+  const energy = (mwh) => (Math.abs(mwh) >= 1e6 ? [fmt(mwh / 1e6, 2), "TWh"] : Math.abs(mwh) >= 1e4 ? [fmt(mwh / 1e3, 1), "GWh"] : [fmt0(mwh), "MWh"]);
+  const energyText = (mwh) => energy(mwh).join(" ");
   // Compact money: $1.45M, $84.2k, $950
-  const money = (v) => { if (!isFinite(v)) return "–"; const a = Math.abs(v), s = v < 0 ? "−$" : "$"; return a >= 1e6 ? s + fmt(a / 1e6, 2) + "M" : a >= 1e4 ? s + fmt(a / 1e3, 1) + "k" : s + fmt(a, 0); };
+  const money = (v) => { if (!isFinite(v)) return "–"; const a = Math.abs(v), s = v < 0 ? "−$" : "$"; return a >= 1e9 ? s + fmt(a / 1e9, 2) + "B" : a >= 1e6 ? s + fmt(a / 1e6, 2) + "M" : a >= 1e4 ? s + fmt(a / 1e3, 1) + "k" : s + fmt(a, 0); };
   const signed = (v, d) => (isFinite(v) ? (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), d) : "–");
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const DIM_COLOR = { energy: "--c-energy", water: "--c-water", cooling: "--c-cooling", carbon: "--c-carbon", noise: "--c-noise", location: "--c-location" };
@@ -118,7 +124,7 @@
    * datasets are stored as their generator settings (they are seeded,
    * so they regenerate identically); uploaded datasets are stored row by row.
    */
-  const STORE_KEY = "greendc.workspace.v1";
+  const STORE_KEY = "greendc.workspace.v2";
   const PROJECTS_KEY = "greendc.projects.v1";
   const store = {
     get(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
@@ -129,7 +135,7 @@
     return {
       app: "GreenDC", version: 1, savedAt: new Date().toISOString(),
       name: state.profile.name, source: state.source, gen: state.gen,
-      rows: state.source === "Simulated" ? null : state.rows,
+      rows: state.source === "Uploaded" ? state.rows : null,
       profile: state.profile, weights: state.weights, levers: state.levers,
       greenScore: state.result ? state.result.green.score : null,
       days: state.rows.length,
@@ -137,10 +143,12 @@
   }
   function applySnapshot(snap) {
     if (!snap || snap.app !== "GreenDC" || !snap.profile) throw new Error("This is not a GreenDC project file.");
-    state.gen = Object.assign({}, state.gen, snap.gen || {});
-    state.rows = snap.rows && snap.rows.length ? snap.rows : G.generateDataset(state.gen);
-    state.source = snap.source || (snap.rows ? "Uploaded" : "Simulated");
-    state.profile = Object.assign(G.profileFromLocation(state.gen.location, state.gen.coolingSystem), snap.profile);
+    // Start from clean settings so nothing carries over from the previous dataset.
+    const isGoogle = !!(snap.gen && snap.gen.preset === "google");
+    state.gen = Object.assign({}, isGoogle ? G.GOOGLE_GEN : SIM_GEN, snap.gen || {});
+    state.rows = snap.rows && snap.rows.length ? snap.rows : isGoogle ? G.generateGoogleDataset(state.gen) : G.generateDataset(state.gen);
+    state.source = snap.source || (snap.rows ? "Uploaded" : isGoogle ? "Google 2023" : "Simulated");
+    state.profile = Object.assign(isGoogle ? G.profileGoogle() : G.profileFromLocation(state.gen.location, state.gen.coolingSystem), snap.profile);
     state.weights = Object.assign({}, G.DEFAULT_WEIGHTS, snap.weights || {});
     state.levers = Object.assign({}, G.DEFAULT_LEVERS, { renewablePct: state.profile.renewablePct }, snap.levers || {});
     locationCache = null;
@@ -168,11 +176,17 @@
   }
 
   function generate() {
-    state.rows = G.generateDataset(state.gen);
     const keepName = state.profile && state.profile._customName ? state.profile.name : null;
-    state.profile = G.profileFromLocation(state.gen.location, state.gen.coolingSystem);
-    state.profile.name = keepName || "GreenDC demo facility · " + G.LOCATIONS[state.gen.location].name;
-    state.source = "Simulated";
+    if (state.gen.preset === "google") {
+      state.rows = G.generateGoogleDataset(state.gen);
+      state.profile = G.profileGoogle();
+      state.source = "Google 2023";
+    } else {
+      state.rows = G.generateDataset(state.gen);
+      state.profile = G.profileFromLocation(state.gen.location, state.gen.coolingSystem);
+      state.profile.name = keepName || "GreenDC demo facility · " + G.LOCATIONS[state.gen.location].name;
+      state.source = "Simulated";
+    }
     state.levers = Object.assign({}, G.DEFAULT_LEVERS, { renewablePct: state.profile.renewablePct });
     fillProfileForm();
     recompute();
@@ -181,7 +195,7 @@
   function renderHeader() {
     const r = state.result, k = r.metrics.kpis;
     $("#tb-name").textContent = state.profile.name;
-    $("#tb-period").textContent = `${k.period} · ${k.days} days · ${fmt(k.avgITkW / 1000, 2)} MW average IT load`;
+    $("#tb-period").textContent = `${k.period} · ${k.days} days · ${fmt(k.avgITkW / 1000, k.avgITkW >= 1e5 ? 0 : 2)} MW average IT load`;
     $("#tb-source").textContent = state.source;
     $("#tb-score").textContent = fmt(r.green.score, 1);
     $("#tb-grade").textContent = r.green.grade.grade;
@@ -214,12 +228,15 @@
   function renderOverview() {
     const r = state.result, k = r.metrics.kpis;
     drawGauge($("#gauge"), r.green.score, r.green.grade);
+    $("#ov-source").innerHTML = state.source === "Google 2023"
+      ? `<b>Data: Google data centre fleet, 2023.</b> Yearly totals match Google's published figures (24 TWh, PUE 1.10, 6.1 billion gallons of water, 64 % carbon-free electricity). The day-to-day pattern, noise and site details are modelled. <a href="#cases">See the step-by-step Google calculation</a>.`
+      : state.source === "Uploaded" ? `<b>Data: your uploaded file</b> (${esc(state.profile.name)}).` : `<b>Data: simulated facility</b> (${esc(state.profile.name)}). Press <a href="#data">Start over</a> on the Data page to return to Google's 2023 data.`;
     $("#ov-kpis").innerHTML = [
       kpi("PUE", fmt(k.pue, 2), "", `DCiE ${fmt(k.dcie, 1)} %`),
       kpi("WUE", fmt(k.wue, 2), "L/kWh", `${fmt0(k.waterM3)} m³ used`),
       kpi("CUE", fmt(k.cue, 3), "kgCO₂e/kWh", "market-based"),
-      kpi("Emissions", fmt0(k.co2MktT), "tCO₂e", `${fmt0(k.co2LocT)} t location-based`),
-      kpi("Facility energy", fmt0(k.totalMWh), "MWh", `${fmt0(k.itMWh)} MWh to IT`),
+      kpi("Emissions", k.co2MktT >= 1e5 ? fmt(k.co2MktT / 1e6, 2) : fmt0(k.co2MktT), k.co2MktT >= 1e5 ? "Mt CO₂e" : "tCO₂e", k.co2LocT >= 1e5 ? `${fmt(k.co2LocT / 1e6, 2)} Mt location-based` : `${fmt0(k.co2LocT)} t location-based`),
+      kpi("Facility energy", energy(k.totalMWh)[0], energy(k.totalMWh)[1], `${energyText(k.itMWh)} to IT`),
       kpi("Noise P95", fmt(k.noiseP95, 1), "dB(A)", `limit ${k.noiseLimit} dB(A)`),
     ].join("");
     const metricText = {
@@ -267,6 +284,14 @@
     $("#f-cooling").innerHTML = Object.entries(G.COOLING_SYSTEMS).map(([k, v]) => `<option value="${k}">${esc(v.name)}</option>`).join("");
     $("#f-location").value = state.gen.location;
     $("#f-cooling").value = state.gen.coolingSystem;
+    $("#btn-google").addEventListener("click", () => {
+      state.gen = Object.assign({}, G.GOOGLE_GEN);
+      if (state.profile) state.profile._customName = false;
+      locationCache = null;
+      syncGenForm();
+      generate();
+      showMsg("#upload-msg", "Loaded Google's 2023 data centre figures (calibrated daily dataset).", "ok");
+    });
     $("#btn-generate").addEventListener("click", () => {
       state.gen = {
         location: $("#f-location").value,
@@ -410,12 +435,12 @@
       if (!pendingReset) { pendingReset = true; renderProjects(); return; }
       pendingReset = false;
       store.remove(STORE_KEY);
-      state.gen = { location: "virginia", coolingSystem: "evaporative", itCapacityMW: 2, economiserAdoption: 0.6, days: 365, seed: 42, injectAnomalies: true };
+      state.gen = Object.assign({}, G.GOOGLE_GEN);
       state.weights = Object.assign({}, G.DEFAULT_WEIGHTS);
       state.profile = null;
       syncGenForm();
       generate();
-      showMsg("#proj-msg", "Started over with the default simulated facility. Saved projects were kept.", "ok");
+      showMsg("#proj-msg", "Started over with the default dataset: Google data centre fleet, 2023. Saved projects were kept.", "ok");
     });
   }
 
@@ -427,7 +452,7 @@
     $("#data-summary").innerHTML = [
       kpi("Days", fmt0(k.days), "", k.period),
       kpi("Columns", cols.length, "", `${G.REQUIRED_COLUMNS.length} required, ${cols.length - G.REQUIRED_COLUMNS.length} optional`),
-      kpi("Avg IT load", fmt0(k.avgITkW), "kW", `${fmt0(k.avgFacilitykW)} kW facility`),
+      kpi("Avg IT load", k.avgITkW >= 1e4 ? fmt(k.avgITkW / 1000, 0) : fmt0(k.avgITkW), k.avgITkW >= 1e4 ? "MW" : "kW", k.avgITkW >= 1e4 ? `${fmt(k.avgFacilitykW / 1000, 0)} MW facility` : `${fmt0(k.avgFacilitykW)} kW facility`),
       kpi("Temperature", k.hasTemp ? "Yes" : "No", "", "enables weather models"),
       kpi("Noise data", k.hasNoise ? "Yes" : "No", "", "enables the noise dimension"),
       kpi("Labelled faults", fmt0(events), "days", "ground truth for detection"),
@@ -477,11 +502,11 @@
     $("#page-energy").innerHTML = dimShell("energy", "Dimension 1 · Energy consumption", "Energy consumption & PUE",
       "How much electricity the facility draws, and how much of it reaches IT equipment rather than cooling and power-distribution overhead.") + `
       <div class="kpis">
-        ${kpi("Facility energy", fmt0(k.totalMWh), "MWh")}
-        ${kpi("IT energy", fmt0(k.itMWh), "MWh")}
+        ${kpi("Facility energy", energy(k.totalMWh)[0], energy(k.totalMWh)[1])}
+        ${kpi("IT energy", energy(k.itMWh)[0], energy(k.itMWh)[1])}
         ${kpi("PUE", fmt(k.pue, 3), "", `daily range ${fmt(k.pueMin, 2)}–${fmt(k.pueMax, 2)}`)}
         ${kpi("DCiE", fmt(k.dcie, 1), "%")}
-        ${kpi("Average IT load", fmt0(k.avgITkW), "kW")}
+        ${kpi("Average IT load", k.avgITkW >= 1e4 ? fmt(k.avgITkW / 1000, 0) : fmt0(k.avgITkW), k.avgITkW >= 1e4 ? "MW" : "kW")}
         ${kpi("IT utilisation", fmt(k.itUtil, 1), "%")}
         ${kpi("Energy cost", money(k.energyCost), "", `at $${fmt(p.priceKwh, 2)}/kWh`)}
       </div>
@@ -684,7 +709,7 @@
           <div class="panel-head"><h3>Acoustic calculator</h3><p>Plan new plant or check a site</p></div>
           <form class="form" id="ac-form">
             <div class="field"><label for="ac-lw">Sound power per unit (dB(A))</label><input id="ac-lw" type="number" step="1" value="94"></div>
-            <div class="field"><label for="ac-n">Number of units</label><input id="ac-n" type="number" min="1" step="1" value="${Math.max(2, Math.ceil((state.gen.itCapacityMW * 1000) / 450))}"></div>
+            <div class="field"><label for="ac-n">Number of units</label><input id="ac-n" type="number" min="1" step="1" value="${state.gen.coolingUnits || Math.max(2, Math.ceil((state.gen.itCapacityMW * 1000) / 450))}"></div>
             <div class="field"><label for="ac-r">Distance to receiver (m)</label><input id="ac-r" type="number" min="1" step="1" value="${p.distanceM}"></div>
             <div class="field"><label for="ac-att">Barrier / enclosure (dB)</label><input id="ac-att" type="number" min="0" step="1" value="0"></div>
           </form>

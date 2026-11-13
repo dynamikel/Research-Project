@@ -9,6 +9,11 @@ fs.mkdirSync(path.join(out, "scenarios"), { recursive: true });
 const sample = G.generateDataset({});
 fs.writeFileSync(path.join(out, "sample_dataset.csv"), G.toCSV(sample, G.REQUIRED_COLUMNS.concat(G.OPTIONAL_COLUMNS)) + "\n");
 
+const google = G.generateGoogleDataset();
+fs.writeFileSync(path.join(out, "google_2023_calibrated.csv"), G.toCSV(google, G.REQUIRED_COLUMNS.concat(G.OPTIONAL_COLUMNS)) + "\n");
+const ga = G.analyse(google, G.profileGoogle());
+console.log("google_2023_calibrated.csv".padEnd(34), "PUE", ga.metrics.kpis.pue.toFixed(3), "GreenScore", ga.green.score.toFixed(1), ga.green.grade.grade);
+
 function project(file, gen, patch, levers) {
   const rows = G.generateDataset(gen);
   const profile = Object.assign(G.profileFromLocation(gen.location, gen.coolingSystem), patch);

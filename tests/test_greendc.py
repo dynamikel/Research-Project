@@ -78,5 +78,20 @@ if js.returncode == 0:
 else:
     print("SKIP parity (node not available)")
 
+# Google calibrated dataset: annual totals must equal Google's published 2023 figures
+gd = g.read_csv(os.path.join(ROOT, "data", "google_2023_calibrated.csv"))
+gp = g.Profile(**g.GOOGLE_2023_PROFILE)
+gm = g.compute_metrics(gd, gp)
+check("Google total energy 24 TWh", gm["total_mwh"] / 1e6, 24.0, 1e-6)
+check("Google PUE 1.10", gm["pue"], 1.10, 1e-6)
+check("Google water 6.1 billion gallons", gm["water_m3"] * 1000 / 3.78541 / 1e9, 6.1, 1e-6)
+check("Google grid intensity 393 g/kWh", gm["avg_grid_ci"], 393, 1e-5)
+if js.returncode == 0:
+    gjs = subprocess.run(["node", "-e", f"""
+const G=require({json.dumps(os.path.join(ROOT, 'website/assets/engine.js'))});
+const a=G.analyse(G.generateGoogleDataset(),G.profileGoogle());console.log(JSON.stringify({{gs:a.green.score}}));
+"""], capture_output=True, text=True)
+    check("parity Google GreenScore (website vs Python on the CSV)", g.green_score(g.score_dimensions(gm, gp)), json.loads(gjs.stdout)["gs"], 1e-6)
+
 print(f"\n{failures} check(s) failed" if failures else "\nAll checks passed")
 sys.exit(1 if failures else 0)
