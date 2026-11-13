@@ -2,66 +2,65 @@
 
 **An Integrated Data-Driven Framework for Sustainable Data Centre Management and Optimization**
 
-GreenDC assesses data centre sustainability across six dimensions (energy, water, cooling, carbon, noise and location) and combines them into one **GreenScore**. This repository holds the research prototype: a free, interactive website that runs entirely in the browser, plus a Python reference implementation of the same calculations.
+**Live site:** https://dynamikel.github.io/Research-Project/
 
-## What's included
+GreenDC assesses data centre sustainability across six dimensions (energy, water, cooling, carbon, noise and location) and combines them into one **GreenScore**. This repository holds the research prototype: a free, interactive website that runs entirely in the browser, a Python reference implementation of the same calculations, test suites, data and a presentation guide.
+
+## Repository layout
 
 | Path | Contents |
 |---|---|
-| `website/index.html` | The web application (open it directly or serve the folder) |
-| `website/assets/engine.js` | Calculation engine: indicators, scoring, anomaly detection, regression, simulator, recommendations |
-| `website/assets/app.js` | User interface, charts and page routing |
-| `website/assets/styles.css` | Styles (light and dark themes, responsive) |
+| `website/index.html` | The web application |
+| `website/assets/engine.js` | Calculation engine: indicators, scoring, anomaly detection, regression, simulator, recommendations, sensitivity analysis, detection benchmark, usability scoring, verification cases |
+| `website/assets/app.js` | Interface for the framework and analytics pages, saving and projects |
+| `website/assets/research.js` | Research pages: real-world cases, sensitivity, evaluation, presentation mode |
+| `website/assets/styles.css` | Styles (light and dark, responsive) |
+| `website/assets/vendor/` | Bundled Chart.js 4.4.1 (MIT) and IBM Plex fonts (OFL), so the site works offline |
 | `python/greendc.py` | Python reference implementation (standard library only) |
-| `data/scenarios/greendc-best-case.json` | Best-case project (ideal Nordic site, every simulator lever at maximum, GreenScore 99.2). Open it with *Import project file* |
-| `data/sample_dataset.csv` | One simulated year (Ashburn, Virginia, 2 MW, evaporative cooling) with injected faults |
+| `tests/` | Node and Python test suites, including JavaScript/Python parity |
+| `data/sample_dataset.csv` | One simulated year (Ashburn, 2 MW, evaporative cooling) with injected faults |
+| `data/scenarios/*.json` | Importable project files: Ashburn C → A, Karachi liquid retrofit, best case |
+| `scripts/make_scenarios.js` | Regenerates the sample dataset and scenario files |
+| `docs/PRESENTATION_GUIDE.md` | Talk outline, demo script, likely questions with answers, key numbers |
+| `.github/workflows/pages.yml` | Tests the code, then publishes `website/` to GitHub Pages |
 
 ## Website pages
 
-- **Overview**: GreenScore gauge, headline KPIs, six dimension cards, radar profile, abstract and keywords.
-- **Data & facility**: simulate a facility (8 regional presets, 3 cooling systems, capacity, economiser adoption, seed) or upload a CSV; edit the regional parameters.
-- **Energy**: facility and IT energy, PUE, DCiE, overhead, utilisation, cost, monthly breakdown, daily PUE.
-- **Water**: WUE (site and source-inclusive), water-stress-weighted footprint, cost, WUE vs temperature.
-- **Cooling**: Cooling Load Factor, Cooling Efficiency Ratio, cooling share, pPUE, free-cooling days and utilisation.
-- **Carbon**: Scope 2 location- and market-based emissions, CUE, grid intensity, renewables, carbon cost.
-- **Noise**: level at the nearest receiver vs the limit, implied sound power, and an acoustic calculator.
-- **Location**: grid intensity, water stress, climate, renewables and distance sub-scores, plus a comparison of the same facility in eight locations.
-- **GreenScore**: adjustable weights, contribution table, every sub-indicator and the grade scale.
-- **Anomaly detection**: rolling z-score, IQR fences and weather-adjusted residual methods, with precision, recall and F1 against injected faults.
-- **Predictive model**: OLS regression of PUE, cooling energy, WUE or noise on outdoor temperature; point forecasts and a climate-warming scenario.
-- **What-if simulator**: seven intervention levers and three presets, with annual energy, water, CO₂e and cost savings.
-- **Recommendations**: rule-based advice, each quantified by the simulator and ranked by GreenScore gain; export to CSV or JSON.
-- **Methodology**: all formulas, benchmarks, model assumptions, data dictionary and references.
+**Framework**
+- **Overview:** GreenScore gauge, headline indicators, six dimension cards, radar profile, abstract and keywords.
+- **Data & facility:** simulate a facility (8 regions, 3 cooling systems) or upload a CSV; edit regional parameters; save, export and import projects.
 
-Every dimension page shows a **worked calculation**: the formula, then the same formula with your data substituted.
+**Six dimensions.** Each page has indicators, charts and a worked calculation that shows the formula with your data substituted.
+- **Energy:** PUE, DCiE, CLF and PLF, IT utilisation, cost.
+- **Water:** WUE (site and source), stress-weighted water.
+- **Cooling:** CLF, CER, partial PUE, free-cooling utilisation.
+- **Carbon:** location- and market-based Scope 2, CUE, ERF.
+- **Noise:** boundary noise compared with the limit, plus an acoustic calculator.
+- **Location:** regional sub-scores, and the same facility compared across eight locations.
 
-## Saving your work
+**Analytics**
+- **GreenScore:** adjustable weights, contributions, every sub-indicator.
+- **Anomaly detection:** weather-adjusted residual, rolling z-score and IQR methods, with precision, recall and F1 against injected faults.
+- **Predictive model:** OLS regression on outdoor temperature, point forecasts and a climate-warming scenario.
+- **What-if simulator:** seven intervention levers and presets, with annual savings.
+- **Recommendations:** rule-based advice quantified by the simulator, plus CSV and JSON export.
 
-- **Automatic:** the current dataset, facility parameters, weights and simulator settings are saved in your browser and come back when you reopen the site.
-- **Saved projects:** on the Data page, name an analysis and choose *Save project* to keep several scenarios side by side, then *Open* any of them later.
-- **Project files:** *Export project file* downloads a `.json` file with the full dataset and settings. *Import project file* opens it on any computer, which is the way to share an analysis or back it up.
-
-Browser storage belongs to one browser on one device. Use project files to move work between devices.
-
-## Verification
-
-Every formula is checked against hand-calculated cases:
-
-```bash
-node tests/engine.test.js
-```
-
-```bash
-python3 tests/test_greendc.py
-```
-
-The Node suite runs 22 hand-worked cases (PUE, DCiE, WUE, CUE, ERF, Scope 2, acoustics, OLS regression, robust z-score, GreenScore) plus identity checks on the sample data. Examples are PUE = 1 + CLF + PLF and CUE = PUE × grid intensity × (1 − RE). It also checks that contracted renewables are not double counted in the location score. The Python suite repeats the hand cases and confirms the Python and JavaScript results agree to 1e-9. The same hand cases run live on the website's Methodology page.
-
-The Methodology page also separates **standardised indicators** (ISO/IEC 30134, The Green Grid, GHG Protocol) from **GreenDC-defined constructs** (scores, GreenScore, free-cooling utilisation, noise margin). It lists every modelling assumption, and covers limitations and references.
+**Research**
+- **Real-world cases:** published fleet figures (Google, Meta, Microsoft, industry reference) scored with coverage reported, plus reproducible scenario case studies.
+- **Sensitivity analysis:** one-at-a-time weights, Monte Carlo over weights (Dirichlet) with rank stability, and benchmark-anchor perturbation.
+- **Evaluation:**
+  - Detection benchmark: 8 locations × 5 seeds, threshold sweep.
+  - System Usability Scale questionnaire, with CSV export of responses.
+- **Methodology:** standard and framework-defined indicators, regional data sources, 26 live verification checks, formulas, assumptions, limitations, references.
+- **Presentation mode:** a 13-slide talk built from live results, with keyboard navigation and full screen.
 
 ## Running it
 
-The site is static, so no build step is needed. Charts and fonts load from public CDNs.
+**Online:** open the live site above.
+
+**Offline:** download the repository (Code → Download ZIP), unzip it and open `website/index.html` in a browser. No server or internet connection is needed.
+
+**Local server (optional):**
 
 ```bash
 cd website
@@ -71,17 +70,33 @@ cd website
 python3 -m http.server 8000
 ```
 
-Then open <http://localhost:8000>. Opening `website/index.html` directly in a browser also works.
+Then open <http://localhost:8000>.
 
-To publish it free with GitHub Pages, copy the contents of `website/` to a `docs/` folder (or the repository root) and enable Pages for that folder in the repository settings.
+## Saving your work
 
-## Python reference implementation
+- **Automatic:** the current dataset, parameters, weights and simulator settings are saved in the browser.
+- **Saved projects:** on the Data page, choose *Save project*, then *Open* it later.
+- **Project files:** *Export project file* downloads a `.json` file with the full dataset, and *Import project file* opens it on any computer. The files in `data/scenarios/` open the same way.
+
+Browser storage is per browser and per device; use project files to move work around.
+
+## Verification
 
 ```bash
-python3 python/greendc.py data/sample_dataset.csv --location virginia
+node tests/engine.test.js
 ```
 
-Add `--json` for the full report. The Python module and `engine.js` produce identical PUE, WUE, CUE, dimension scores and GreenScore on the sample dataset.
+```bash
+python3 tests/test_greendc.py
+```
+
+The Node suite runs the 26 hand-calculated cases, identity checks (PUE = 1 + CLF + PLF, CUE = PUE × grid intensity × (1 − RE)), no double counting of renewables, utilisation under consolidation, and detection performance. The Python suite repeats the hand cases and confirms Python and JavaScript agree to 1e-9 on the sample dataset. The same hand cases run live on the website's Methodology page, and the deployment workflow runs both suites before publishing.
+
+## Data sources
+
+- **Grid carbon intensity and grid renewable share:** national 2024 values from the Our World in Data energy dataset (Ember; Energy Institute).
+- **Published cases:** Google 2024 Environmental Report; Meta 2024 Sustainability Report; Microsoft sustainability reporting; Uptime Institute 2024; Shehabi et al. (2016).
+- **Indicative values:** water stress, climate, tariffs, distances and contracted renewables are indicative and labelled as such on the site.
 
 ## Input data format
 
@@ -91,15 +106,11 @@ Daily rows, comma separated. Required: `date, it_kwh, cooling_kwh, other_kwh, wa
 
 | Indicator | Formula |
 |---|---|
-| PUE | (E_IT + E_cooling + E_other) ÷ E_IT |
-| DCiE | E_IT ÷ E_total × 100 |
+| PUE | (E_IT + E_cooling + E_other) ÷ E_IT = 1 + CLF + PLF |
 | WUE | water (L) ÷ E_IT (kWh) |
-| CLF / CER | E_cooling ÷ E_IT / E_IT ÷ E_cooling |
-| CO₂ (location) | Σ E_total × grid intensity |
-| CO₂ (market) | CO₂_loc × (1 − renewable share) |
-| CUE | CO₂_mkt ÷ E_IT |
+| CUE | market-based CO₂ ÷ E_IT |
+| CO₂ (location / market) | Σ E_total × grid intensity; × (1 − renewable share) |
 | Noise at receiver | Lp = Lw − 20·log₁₀(r) − 8 |
 | Sub-score | 100 × (x − worst) ÷ (best − worst), clamped 0–100 |
 | GreenScore | Σ wᵢSᵢ ÷ Σ wᵢ (default weights: energy 25, carbon 25, water 15, cooling 15, noise 10, location 10) |
-
-Regional presets are rounded indicative values for research demonstration, not certified data.
+| SUS | 2.5 × Σ(odd items − 1 + 5 − even items) |

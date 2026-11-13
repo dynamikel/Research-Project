@@ -50,6 +50,12 @@ check("OLS intercept", reg["intercept"], 2)
 check("OLS R2", reg["r2"], 1)
 check("GreenScore", g.green_score({"energy": 100, "water": 0, "cooling": 50, "carbon": 50, "noise": 50, "location": 50}), 55)
 
+check("SUS neutral", g.sus_score([3] * 10), 50)
+check("SUS best", g.sus_score([5, 1] * 5), 100)
+sc, gs, cov = g.annual_case(pue=1.10, grid_ci=393, renewable_pct=64, energy_twh=24.0, water_billion_gal=6.1)
+check("Google 2023 derived GreenScore (partial)", gs, 81.7, 1e-3)
+check("Google 2023 coverage", cov, 0.65)
+
 # Parity with the JavaScript engine on the sample dataset
 sample = os.path.join(ROOT, "data", "sample_dataset.csv")
 js = subprocess.run(["node", "-e", f"""

@@ -6,9 +6,7 @@
 <title>GreenDC</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="GreenDC: an integrated, data-driven framework for sustainable data centre management across energy, water, cooling, carbon, noise and location.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/vendor/fonts.css">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
@@ -46,7 +44,14 @@
         <a href="#forecast">Predictive model</a>
         <a href="#simulator">What-if simulator</a>
         <a href="#recommendations">Recommendations</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Research</div>
+        <a href="#cases">Real-world cases</a>
+        <a href="#sensitivity">Sensitivity analysis</a>
+        <a href="#evaluation">Evaluation</a>
         <a href="#methodology">Methodology</a>
+        <a href="#present">Presentation mode</a>
       </div>
     </nav>
     <div class="rail-foot">Research prototype · free &amp; open<br>All calculations run in your browser.</div>
@@ -73,6 +78,7 @@
             <div class="btns" style="margin-top:16px">
               <a class="btn primary" href="#data" style="text-decoration:none">Load or simulate data</a>
               <a class="btn" href="#simulator" style="text-decoration:none">Open the what-if simulator</a>
+              <a class="btn" href="#present" style="text-decoration:none">Start the presentation</a>
             </div>
           </div>
           <svg class="gauge" id="gauge" viewBox="0 0 220 220" role="img" aria-label="GreenScore gauge"></svg>
@@ -343,6 +349,139 @@
         </div>
       </section>
 
+
+      <!-- ================= REAL-WORLD CASES ================= -->
+      <section class="page" data-page="cases">
+        <div class="page-head">
+          <div class="eyebrow">Research · Validation with public data</div>
+          <h1>Real-world cases</h1>
+          <p class="lede">GreenDC applied to figures that operators have published, alongside prepared scenario case studies. Public sustainability reports give annual fleet totals, so only the energy, water and carbon dimensions can be scored; the coverage column shows the share of the GreenScore weight that each case supports.</p>
+        </div>
+        <div class="split">
+          <div class="panel">
+            <div class="panel-head"><h3>Published fleets scored by GreenDC</h3><div class="legend" id="cases-legend"></div></div>
+            <div class="chart"><canvas id="cases-chart" aria-label="Dimension scores of published cases"></canvas></div>
+          </div>
+          <div class="panel"><h3>Derived values</h3><div class="calc" id="cases-calc"></div></div>
+        </div>
+        <div class="panel">
+          <div class="table-wrap"><table id="cases-table"></table></div>
+          <p style="font-size:0.8rem;color:var(--ink-2)">* Partial GreenScore over the dimensions with data (default weights renormalised). † Design value, not measured. ‡ Derived by GreenDC from reported electricity, water and PUE. Your facility row shows the same three-dimension score so it can be compared directly.</p>
+        </div>
+        <div class="panel">
+          <h3>Sources and derivations</h3>
+          <div class="calc" id="cases-notes"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Scenario case studies</h2><p>Simulated facilities with fixed settings (seed 42), so the results are reproducible</p></div>
+          <h3>Ashburn, Virginia: from grade C to grade A</h3>
+          <div class="table-wrap"><table id="scn-ashburn"></table></div>
+          <h3>Karachi, Pakistan: cooling technology and upgrades</h3>
+          <div class="table-wrap"><table id="scn-karachi"></table></div>
+          <h3>Upper bound: ideal site, every lever at maximum</h3>
+          <div class="table-wrap"><table id="scn-best"></table></div>
+        </div>
+      </section>
+
+      <!-- ================= SENSITIVITY ================= -->
+      <section class="page" data-page="sensitivity">
+        <div class="page-head">
+          <div class="eyebrow">Research · Robustness</div>
+          <h1>Sensitivity analysis</h1>
+          <p class="lede">The GreenScore depends on two design choices: the dimension weights and the benchmark anchors. This page measures how much the results move when either choice changes.</p>
+        </div>
+        <div class="split">
+          <div class="panel">
+            <div class="panel-head"><h3>One weight at a time</h3><p>Each weight set to 0 and to double its default, others unchanged</p></div>
+            <div class="chart"><canvas id="sens-tornado" aria-label="Tornado chart of GreenScore under weight changes"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3>Benchmark anchors</h3>
+            <p style="font-size:0.88rem;color:var(--ink-2)">Every best and worst anchor is moved at random by up to the stated share of its span, and the GreenScore of the loaded facility is recalculated.</p>
+            <div class="calc" id="sens-anchor"></div>
+          </div>
+        </div>
+        <div class="panel"><div class="table-wrap"><table id="sens-oat"></table></div></div>
+        <div class="panel">
+          <div class="panel-head"><h2>Monte Carlo over weights: do location rankings hold?</h2>
+            <div class="field" style="min-width:230px"><label for="sens-mode">Weight sampling</label><select id="sens-mode"><option value="uniform">Any weighting equally likely (Dirichlet α = 1)</option><option value="default">Close to the default weights (Dirichlet κ = 30)</option></select></div>
+          </div>
+          <p style="font-size:0.88rem;color:var(--ink-2);max-width:75ch">The same 2 MW evaporative facility is simulated in all eight regions. For each of 2,000 random weightings, GreenDC recomputes every GreenScore and ranks the regions, then compares that ranking with the default one.</p>
+          <div class="kpis" id="sens-kpis"></div>
+          <div class="chart"><canvas id="sens-mc-chart" aria-label="GreenScore intervals by location"></canvas></div>
+          <div class="legend" id="sens-mc-legend"></div>
+          <div class="table-wrap"><table id="sens-mc"></table></div>
+        </div>
+      </section>
+
+      <!-- ================= EVALUATION ================= -->
+      <section class="page" data-page="evaluation">
+        <div class="page-head">
+          <div class="eyebrow">Research · Evaluation</div>
+          <h1>Evaluation</h1>
+          <p class="lede">Two evaluations: how well the anomaly detectors find known faults across many simulated facilities, and how usable the prototype is, measured with the System Usability Scale.</p>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Anomaly detection benchmark</h2>
+            <div class="btns"><div class="field" style="min-width:150px"><label for="ev-threshold">Threshold</label><select id="ev-threshold"><option>2.5</option><option>3</option><option selected>3.5</option><option>4</option><option>5</option></select></div></div>
+          </div>
+          <p style="font-size:0.88rem;color:var(--ink-2);max-width:75ch">Eight locations × five random seeds, each a simulated year with injected faults (cooling faults, water leaks, noise spikes, IT surges, UPS faults). A detected day counts as a true positive when it carries a fault that affects that indicator. Values are pooled precision / recall / F1; the best F1 per row is bold.</p>
+          <div class="kpis" id="ev-kpis"></div>
+          <div class="table-wrap"><table id="ev-table"></table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>F1 score as the threshold changes</h3>
+            <div class="field" style="min-width:200px"><label for="ev-metric">Indicator</label><select id="ev-metric"><option value="pue">PUE</option><option value="wue">WUE</option><option value="noise">Boundary noise</option><option value="clf">Cooling Load Factor</option><option value="other">Distribution losses</option></select></div>
+          </div>
+          <div class="chart"><canvas id="ev-sweep" aria-label="F1 against threshold for each method"></canvas></div>
+          <div class="legend" id="ev-legend"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Usability study (System Usability Scale)</h2><p>Run with participants on this device; responses stay in this browser until you export them</p></div>
+          <div class="prose">
+            <p>Suggested session, about 15 minutes per participant:</p>
+            <ul>
+              <li>Task 1: generate a facility in a location of your choice and read its GreenScore.</li>
+              <li>Task 2: find the PUE calculation and explain what it means.</li>
+              <li>Task 3: find one anomaly and say what might have caused it.</li>
+              <li>Task 4: use the simulator to raise the grade by one letter.</li>
+              <li>Then complete the ten statements below (1 = strongly disagree, 5 = strongly agree).</li>
+            </ul>
+          </div>
+          <form id="sus-form" class="sus-form">
+            <div class="form">
+              <div class="field"><label for="sus-id">Participant ID</label><input id="sus-id" type="text" maxlength="20" placeholder="P01"></div>
+              <div class="field"><label for="sus-role">Background</label><select id="sus-role"><option>Student</option><option>IT / data centre professional</option><option>Sustainability professional</option><option>Academic</option><option>Other</option></select></div>
+            </div>
+            <div id="sus-items"></div>
+            <div class="field"><label for="sus-comment">Comments (optional)</label><input id="sus-comment" type="text" maxlength="300"></div>
+            <div class="btns"><button class="btn primary" type="submit">Save response</button><button class="btn" type="button" id="btn-sus-export">Export responses (CSV)</button><button class="btn" type="button" id="btn-sus-clear">Delete all responses</button></div>
+            <div class="msg hidden" id="sus-msg" role="status"></div>
+          </form>
+          <div class="kpis" id="sus-kpis"></div>
+          <div class="table-wrap"><table id="sus-table"></table></div>
+          <p style="font-size:0.8rem;color:var(--ink-2)">SUS score = 2.5 × Σ(odd items − 1 + 5 − even items). Adjectives after Bangor, Kortum and Miller (2009); 68 is the average across published studies.</p>
+        </div>
+      </section>
+
+      <!-- ================= PRESENTATION ================= -->
+      <section class="page" data-page="present">
+        <div class="page-head">
+          <div class="eyebrow">Presentation mode</div>
+          <h1>Present GreenDC</h1>
+          <p class="lede">A 13-slide talk built from live results. Use the arrow keys, click the slide, or the buttons. Each slide links to the page that backs it up, so you can switch to a live demo and come back.</p>
+        </div>
+        <div class="panel" style="flex-direction:row;flex-wrap:wrap;gap:12px;align-items:flex-end">
+          <div class="field" style="flex:1;min-width:220px"><label for="deck-author">Presenter, institution and date (shown on the title slide)</label><input id="deck-author" type="text" maxlength="120" placeholder="Your name · University · Month 2026"></div>
+        </div>
+        <div id="deck-wrap" class="deck-wrap">
+          <div class="deck-bar"><div id="deck-progress"></div></div>
+          <div id="deck" class="deck" tabindex="0" aria-live="polite"></div>
+          <div class="btns deck-controls"><button class="btn" id="deck-prev" type="button">← Previous</button><span id="deck-pos" class="mono"></span><button class="btn primary" id="deck-next" type="button">Next →</button><button class="btn" id="deck-full" type="button">Full screen</button></div>
+        </div>
+        <div class="msg hidden" id="deck-msg" role="status"></div>
+      </section>
+
       <!-- ================= METHODOLOGY ================= -->
       <section class="page" data-page="methodology">
         <div class="page-head">
@@ -368,6 +507,11 @@
               <tr><td>Dimension scores, GreenScore, grades</td><td><span class="pill warn">GreenDC-defined</span></td><td style="white-space:normal">Proposed in this framework: linear benchmark normalisation and weighted aggregation</td></tr>
             </tbody>
           </table></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Regional data sources</h2><p>Which preset values are cited and which are indicative</p></div>
+          <div class="table-wrap"><table id="regional-table"></table></div>
         </div>
 
         <div class="panel">
@@ -486,7 +630,7 @@
             <h2>Limitations &amp; references</h2>
             <div class="prose">
               <ul>
-                <li>Regional presets are rounded indicative values for research demonstration, not certified data. Replace them with sourced figures for a specific study.</li>
+                <li>Grid carbon intensity and grid renewable share are cited national 2024 values (OWID/Ember); US presets share the US national value. Water stress, climate, tariffs and contracted renewables are indicative and should be replaced with site data for a specific study.</li>
                 <li>Market-based emissions apply the grid average to the non-renewable share. The GHG Protocol asks for a residual-mix factor, which is usually higher, so this underestimates market-based emissions where residual mixes are published.</li>
                 <li>Free-cooling potential uses daily mean dry-bulb temperature. Economiser design uses hourly dry- and wet-bulb data, so hourly data gives more precise results.</li>
                 <li>Noise uses daily representative levels. Planning limits are often night-time L<sub>Aeq</sub> values, so night-time data should be used where it exists.</li>
@@ -509,6 +653,10 @@
                 <li>Kuzma, S. et al. (2023), <em>Aqueduct 4.0</em>, World Resources Institute.</li>
                 <li>Shehabi, A. et al. (2016), <em>United States Data Center Energy Usage Report</em>, LBNL-1005775.</li>
                 <li>Uptime Institute (2024), <em>Global Data Center Survey</em>.</li>
+                <li>Our World in Data (2025), <em>Energy dataset</em> (Ember; Energy Institute Statistical Review), github.com/owid/energy-data.</li>
+                <li>Google (2024), <em>Environmental Report</em>; Meta (2024), <em>Sustainability Report</em>; Microsoft (2024), <em>Environmental Sustainability Report</em> and datacenter blog.</li>
+                <li>Brooke, J. (1996), <em>SUS: A quick and dirty usability scale</em>; Bangor, A., Kortum, P. &amp; Miller, J. (2009), <em>Determining what individual SUS scores mean</em>, J. Usability Studies 4(3).</li>
+                <li>Marsaglia, G. &amp; Tsang, W. (2000), <em>A simple method for generating gamma variables</em>, ACM TOMS 26(3) (Dirichlet weight sampling).</li>
                 <li>Iglewicz, B. &amp; Hoaglin, D. (1993), <em>How to Detect and Handle Outliers</em> (modified z-score with MAD).</li>
               </ul>
             </div>
@@ -520,8 +668,9 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="assets/vendor/chart.umd.min.js"></script>
 <script src="assets/engine.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/research.js"></script>
 </body>
 </html>

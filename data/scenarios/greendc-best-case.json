@@ -1,7 +1,7 @@
 {
  "app": "GreenDC",
  "version": 1,
- "savedAt": "2026-11-13T14:54:28.562Z",
+ "savedAt": "2026-11-13T15:12:31.317Z",
  "name": "GreenDC best case · ideal Nordic site",
  "source": "Simulated",
  "gen": {
@@ -46,6 +46,6 @@
   "waterReuse": 90,
   "noiseMitigation": 15
  },
- "greenScore": 93.0514266014701,
+ "greenScore": 93.11660014101744,
  "days": 365
 }

@@ -55,22 +55,63 @@
     { min: 0,  grade: "F",  label: "Critical" },
   ];
 
-  // Indicative regional values for simulation. They are rounded public
-  // figures meant for research demonstration, not certified data.
+  // Regional presets.
+  //   gridCI and gridRenewablePct: national 2024 values, Our World in Data energy
+  //     dataset (Ember and Energy Institute), rounded. US presets use the US national value.
+  //   waterStress: indicative, based on WRI Aqueduct 4.0 categories; verify per site.
+  //   renewablePct (contracted), prices, distance, noise limit, climate: indicative
+  //     assumptions for demonstration.
   //   gridCI           average grid emission factor, gCO2e/kWh
   //   renewablePct     renewable electricity the FACILITY contracts (PPA, green tariff, on-site)
   //   gridRenewablePct renewable share of the REGIONAL grid (used only in the location score)
   //   waterStress      WRI Aqueduct baseline water stress, 0-5
   const LOCATIONS = {
-    stockholm: { name: "Stockholm, Sweden",     tempMean: 7.5,  tempAmp: 9.5, hemisphere: "N", gridCI: 40,  renewablePct: 70, gridRenewablePct: 68, waterStress: 0.6, distanceM: 600, noiseLimit: 45, priceKwh: 0.09, priceWaterM3: 2.6 },
-    dublin:    { name: "Dublin, Ireland",       tempMean: 10.0, tempAmp: 5.0, hemisphere: "N", gridCI: 290, renewablePct: 40, gridRenewablePct: 40, waterStress: 1.2, distanceM: 350, noiseLimit: 45, priceKwh: 0.22, priceWaterM3: 2.2 },
-    virginia:  { name: "Ashburn, Virginia, US", tempMean: 13.5, tempAmp: 11.5, hemisphere: "N", gridCI: 370, renewablePct: 25, gridRenewablePct: 12, waterStress: 2.1, distanceM: 250, noiseLimit: 50, priceKwh: 0.08, priceWaterM3: 1.6 },
-    phoenix:   { name: "Phoenix, Arizona, US",  tempMean: 24.0, tempAmp: 10.0, hemisphere: "N", gridCI: 380, renewablePct: 20, gridRenewablePct: 15, waterStress: 4.6, distanceM: 400, noiseLimit: 50, priceKwh: 0.10, priceWaterM3: 1.9 },
-    singapore: { name: "Singapore",             tempMean: 27.8, tempAmp: 1.0, hemisphere: "N", gridCI: 410, renewablePct: 5, gridRenewablePct: 4,  waterStress: 2.8, distanceM: 150, noiseLimit: 55, priceKwh: 0.21, priceWaterM3: 2.0 },
-    karachi:   { name: "Karachi, Pakistan",     tempMean: 26.5, tempAmp: 5.5, hemisphere: "N", gridCI: 430, renewablePct: 15, gridRenewablePct: 30, waterStress: 4.4, distanceM: 120, noiseLimit: 55, priceKwh: 0.14, priceWaterM3: 0.6 },
-    mumbai:    { name: "Mumbai, India",         tempMean: 27.5, tempAmp: 2.5, hemisphere: "N", gridCI: 710, renewablePct: 12, gridRenewablePct: 22, waterStress: 3.9, distanceM: 120, noiseLimit: 55, priceKwh: 0.11, priceWaterM3: 0.5 },
-    sydney:    { name: "Sydney, Australia",     tempMean: 18.5, tempAmp: 5.0, hemisphere: "S", gridCI: 620, renewablePct: 30, gridRenewablePct: 35, waterStress: 2.5, distanceM: 300, noiseLimit: 50, priceKwh: 0.18, priceWaterM3: 2.4 },
+    stockholm: { name: "Stockholm, Sweden",     tempMean: 7.5,  tempAmp: 9.5, hemisphere: "N", gridCI: 35,  renewablePct: 70, gridRenewablePct: 69, waterStress: 0.6, distanceM: 600, noiseLimit: 45, priceKwh: 0.09, priceWaterM3: 2.6 },
+    dublin:    { name: "Dublin, Ireland",       tempMean: 10.0, tempAmp: 5.0, hemisphere: "N", gridCI: 271, renewablePct: 40, gridRenewablePct: 47, waterStress: 1.2, distanceM: 350, noiseLimit: 45, priceKwh: 0.22, priceWaterM3: 2.2 },
+    virginia:  { name: "Ashburn, Virginia, US", tempMean: 13.5, tempAmp: 11.5, hemisphere: "N", gridCI: 384, renewablePct: 25, gridRenewablePct: 24, waterStress: 2.1, distanceM: 250, noiseLimit: 50, priceKwh: 0.08, priceWaterM3: 1.6 },
+    phoenix:   { name: "Phoenix, Arizona, US",  tempMean: 24.0, tempAmp: 10.0, hemisphere: "N", gridCI: 384, renewablePct: 20, gridRenewablePct: 24, waterStress: 4.6, distanceM: 400, noiseLimit: 50, priceKwh: 0.10, priceWaterM3: 1.9 },
+    singapore: { name: "Singapore",             tempMean: 27.8, tempAmp: 1.0, hemisphere: "N", gridCI: 499, renewablePct: 5, gridRenewablePct: 5,  waterStress: 2.8, distanceM: 150, noiseLimit: 55, priceKwh: 0.21, priceWaterM3: 2.0 },
+    karachi:   { name: "Karachi, Pakistan",     tempMean: 26.5, tempAmp: 5.5, hemisphere: "N", gridCI: 374, renewablePct: 15, gridRenewablePct: 37, waterStress: 4.4, distanceM: 120, noiseLimit: 55, priceKwh: 0.14, priceWaterM3: 0.6 },
+    mumbai:    { name: "Mumbai, India",         tempMean: 27.5, tempAmp: 2.5, hemisphere: "N", gridCI: 705, renewablePct: 12, gridRenewablePct: 20, waterStress: 3.9, distanceM: 120, noiseLimit: 55, priceKwh: 0.11, priceWaterM3: 0.5 },
+    sydney:    { name: "Sydney, Australia",     tempMean: 18.5, tempAmp: 5.0, hemisphere: "S", gridCI: 554, renewablePct: 30, gridRenewablePct: 35, waterStress: 2.5, distanceM: 300, noiseLimit: 50, priceKwh: 0.18, priceWaterM3: 2.4 },
   };
+
+  const REGIONAL_SOURCES = {
+    gridCI: { label: "Grid carbon intensity", source: "Our World in Data energy dataset (Ember; Energy Institute), 2024, national", status: "cited" },
+    gridRenewablePct: { label: "Grid renewable share", source: "Our World in Data energy dataset (Ember; Energy Institute), 2024, national, excludes nuclear", status: "cited" },
+    waterStress: { label: "Baseline water stress", source: "Indicative, consistent with WRI Aqueduct 4.0 categories; check the Aqueduct country and basin values for a real site", status: "indicative" },
+    climate: { label: "Temperature profile", source: "Indicative annual mean and seasonal amplitude", status: "indicative" },
+    renewablePct: { label: "Contracted renewables", source: "Facility assumption", status: "assumption" },
+    prices: { label: "Electricity and water prices", source: "Indicative commercial tariffs", status: "indicative" },
+    distanceM: { label: "Distance to receivers, noise limit", source: "Facility assumption; limits indicative of night-time planning limits", status: "assumption" },
+  };
+
+  /* Published fleet-level figures used as real-data case studies.
+   * Values are as reported by each company for the year shown. Where a
+   * figure is derived by GreenDC, `derived` says how. Unknown values are
+   * null and that dimension is excluded (coverage is reported). */
+  const PUBLIC_CASES = [
+    {
+      id: "industry", name: "Industry average (reference)", year: "2024", pue: 1.56, wue: 1.8, gridCI: 471, renewablePct: 0,
+      notes: "PUE: Uptime Institute Global Data Center Survey 2024. WUE: Shehabi et al. (2016), LBNL US data center report. Grid: world average 2024, Our World in Data (Ember). No renewable contracts assumed.",
+      derived: "CUE = PUE × grid intensity",
+    },
+    {
+      id: "google", name: "Google data centre fleet", year: "2023", pue: 1.10, wue: null, energyTWh: 24.0, waterBillionGal: 6.1, gridCI: 393, renewablePct: 64,
+      notes: "Google 2024 Environmental Report (2023 data): fleet TTM PUE 1.10, data centre electricity >24 TWh, data centre water consumption 6.1 billion gallons, 64 % hourly carbon-free energy (CFE). Grid: US average 2023, Our World in Data (Ember).",
+      derived: "WUE = 6.1 bn gal × 3.785 L ÷ (24 TWh ÷ 1.10). CFE % used in place of contracted renewables. Grid intensity assumed US average because most of the fleet is in the US.",
+    },
+    {
+      id: "meta", name: "Meta data centre fleet", year: "2023", pue: 1.09, wue: 0.20, gridCI: 393, renewablePct: 100,
+      notes: "Meta 2024 Sustainability Report (2023 data): average PUE 1.09, WUE 0.20 L/kWh, operations supported by 100 % renewable energy. Grid: US average 2023, Our World in Data (Ember).",
+      derived: "Market-based CUE is zero because all electricity is matched with renewables.",
+    },
+    {
+      id: "microsoft", name: "Microsoft datacenter fleet", year: "FY2024", pue: 1.12, pueIsDesign: true, wue: 0.30, gridCI: null, renewablePct: null,
+      notes: "Microsoft: average WUE 0.30 L/kWh (water withdrawal basis); newest-generation design PUE 1.12 (no fleet operating PUE found). No comparable renewable share used.",
+      derived: "PUE is a design value, so its energy score is indicative only. Carbon is excluded.",
+    },
+  ];
 
   // Cooling architectures used by the simulator.
   const COOLING_SYSTEMS = {
@@ -406,8 +447,8 @@
     return w ? sum(valid.map((x) => x.score * x.weight)) / w : NaN;
   }
 
-  function scoreDimensions(metrics) {
-    const k = metrics.kpis, p = metrics.profile, B = BENCHMARKS;
+  function scoreDimensions(metrics, benchmarks) {
+    const k = metrics.kpis, p = metrics.profile, B = benchmarks || BENCHMARKS;
     const sub = (name, value, bench, weight, fmt) => ({ name, value, score: linearScore(value, bench.best, bench.worst), weight, best: bench.best, worst: bench.worst, unit: bench.unit, fmt });
 
     const energyParts = [sub("PUE", k.pue, B.pue, 0.8, 2), sub("IT utilisation", k.itUtil, B.itUtil, 0.2, 1)];
@@ -649,7 +690,225 @@
   }
 
   /* ---------------------------------------------------------- *
-   * 13. Verification: hand-calculated reference cases
+   * 13. Annual (published) data mode
+   * ---------------------------------------------------------- */
+
+  const NAN = NaN;
+  function analyseAnnual(c, weights) {
+    const pue = c.pue != null ? c.pue : NAN;
+    let wue = c.wue != null ? c.wue : NAN;
+    if (!isFinite(wue) && c.energyTWh && c.waterBillionGal && isFinite(pue)) {
+      wue = (c.waterBillionGal * 1e9 * 3.78541) / ((c.energyTWh * 1e9) / pue);
+    }
+    const ren = c.renewablePct != null ? c.renewablePct / 100 : NAN;
+    const cue = isFinite(pue) && c.gridCI != null && isFinite(ren) ? pue * (c.gridCI / 1000) * (1 - ren) : NAN;
+    const kpis = {
+      pue, wue, cue, itUtil: NAN, clf: NAN, freeCoolingUtilisationPct: NAN, freeCoolingDaysPct: NAN, noiseMargin: NAN,
+      dcie: isFinite(pue) ? 100 / pue : NAN,
+    };
+    const profile = { gridCI: NAN, waterStress: NAN, renewablePct: NAN, gridRenewablePct: NAN, distanceM: NAN };
+    const scores = scoreDimensions({ kpis, profile });
+    const green = greenScore(scores, weights);
+    const w = weights || DEFAULT_WEIGHTS, wsum = DIMENSIONS.reduce((s, d) => s + w[d.key], 0);
+    const coverage = DIMENSIONS.filter((d) => isFinite(scores[d.key].score)).reduce((s, d) => s + w[d.key], 0) / wsum;
+    return { kpis, scores, green, coverage };
+  }
+
+  /* ---------------------------------------------------------- *
+   * 14. Sensitivity analysis
+   * ---------------------------------------------------------- */
+
+  function gammaSample(alpha, rand) {
+    // Marsaglia & Tsang (2000); boost alpha < 1
+    if (alpha < 1) return gammaSample(alpha + 1, rand) * Math.pow(rand(), 1 / alpha);
+    const d = alpha - 1 / 3, c = 1 / Math.sqrt(9 * d);
+    for (;;) {
+      let x, v;
+      do { x = gaussian(rand); v = 1 + c * x; } while (v <= 0);
+      v = v * v * v;
+      const u = rand();
+      if (u < 1 - 0.0331 * x ** 4 || Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v;
+    }
+  }
+  function dirichlet(alphas, rand) {
+    const g = alphas.map((a) => gammaSample(a, rand));
+    const t = sum(g);
+    return g.map((x) => x / t);
+  }
+  function scoreVector(scores) { return DIMENSIONS.map((d) => scores[d.key].score); }
+  function gsFromVector(vec, wvec) {
+    let s = 0, w = 0;
+    vec.forEach((v, i) => { if (isFinite(v)) { s += v * wvec[i]; w += wvec[i]; } });
+    return w ? s / w : NaN;
+  }
+  // One-at-a-time: each weight from 0 to 2x its default while the others keep theirs.
+  function weightOAT(scores, weights) {
+    const w = weights || DEFAULT_WEIGHTS, base = DIMENSIONS.map((d) => w[d.key]), vec = scoreVector(scores);
+    const baseGS = gsFromVector(vec, base);
+    return DIMENSIONS.map((d, i) => {
+      const lo = base.slice(); lo[i] = 0;
+      const hi = base.slice(); hi[i] = base[i] * 2;
+      return { key: d.key, label: d.label, low: gsFromVector(vec, lo), high: gsFromVector(vec, hi), base: baseGS };
+    });
+  }
+  function ranks(values) {
+    const order = values.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]);
+    const r = new Array(values.length);
+    order.forEach(([, i], k) => { r[i] = k + 1; });
+    return r;
+  }
+  function spearman(r1, r2) {
+    const n = r1.length;
+    const d2 = r1.reduce((s, r, i) => s + (r - r2[i]) ** 2, 0);
+    return 1 - (6 * d2) / (n * (n * n - 1));
+  }
+  /**
+   * Monte Carlo over weights. items: [{ name, scores }].
+   * mode "default": Dirichlet centred on the default weights (concentration kappa);
+   * mode "uniform": every weighting equally likely.
+   */
+  function monteCarloWeights(items, opts) {
+    const o = Object.assign({ draws: 2000, seed: 7, mode: "default", kappa: 30, weights: DEFAULT_WEIGHTS }, opts || {});
+    const rand = mulberry32(o.seed);
+    const base = DIMENSIONS.map((d) => o.weights[d.key]);
+    const bsum = sum(base);
+    const alphas = o.mode === "uniform" ? base.map(() => 1) : base.map((b) => Math.max(0.05, (b / bsum) * o.kappa));
+    const vecs = items.map((it) => scoreVector(it.scores));
+    const baseGS = vecs.map((v) => gsFromVector(v, base));
+    const baseRank = ranks(baseGS);
+    const baseGrade = baseGS.map((g) => gradeFor(g).grade);
+    const samples = items.map(() => []);
+    const rankCount = items.map(() => new Array(items.length).fill(0));
+    let rhoSum = 0, sameOrder = 0;
+    const gradeSame = items.map(() => 0);
+    for (let k = 0; k < o.draws; k++) {
+      const w = dirichlet(alphas, rand);
+      const gs = vecs.map((v) => gsFromVector(v, w));
+      const r = ranks(gs);
+      gs.forEach((g, i) => { samples[i].push(g); rankCount[i][r[i] - 1]++; if (gradeFor(g).grade === baseGrade[i]) gradeSame[i]++; });
+      const rho = spearman(r, baseRank);
+      rhoSum += rho;
+      if (rho === 1) sameOrder++;
+    }
+    return {
+      mode: o.mode, draws: o.draws, alphas,
+      items: items.map((it, i) => ({
+        name: it.name, base: baseGS[i], baseRank: baseRank[i], baseGrade: baseGrade[i],
+        mean: mean(samples[i]), p5: quantile(samples[i], 0.05), p95: quantile(samples[i], 0.95),
+        min: Math.min(...samples[i]), max: Math.max(...samples[i]),
+        keepRank: rankCount[i][baseRank[i] - 1] / o.draws,
+        keepGrade: gradeSame[i] / o.draws,
+        rankDist: rankCount[i].map((c) => c / o.draws),
+      })),
+      meanSpearman: rhoSum / o.draws,
+      sameOrder: sameOrder / o.draws,
+    };
+  }
+  // Benchmark anchors: shift every best/worst anchor by up to ±pct of its span.
+  function anchorSensitivity(metrics, weights, opts) {
+    const o = Object.assign({ draws: 1000, pct: 10, seed: 11 }, opts || {});
+    const rand = mulberry32(o.seed);
+    const out = [];
+    for (let k = 0; k < o.draws; k++) {
+      const B = {};
+      Object.entries(BENCHMARKS).forEach(([key, b]) => {
+        const span = b.best - b.worst, j = (o.pct / 100) * span;
+        B[key] = Object.assign({}, b, { best: b.best + (rand() * 2 - 1) * j, worst: b.worst + (rand() * 2 - 1) * j });
+      });
+      out.push(greenScore(scoreDimensions(metrics, B), weights).score);
+    }
+    return { pct: o.pct, draws: o.draws, mean: mean(out), p5: quantile(out, 0.05), p95: quantile(out, 0.95), min: Math.min(...out), max: Math.max(...out) };
+  }
+
+  /* ---------------------------------------------------------- *
+   * 15. Detection benchmark
+   * ---------------------------------------------------------- */
+
+  const ANOMALY_TARGETS = {
+    pue:   { label: "PUE", get: (d) => d.pue, digits: 3, events: ["cooling_fault", "ups_fault"] },
+    clf:   { label: "Cooling Load Factor", get: (d) => d.clf, digits: 3, events: ["cooling_fault"] },
+    wue:   { label: "WUE (L/kWh)", get: (d) => d.wue, digits: 3, events: ["water_leak"] },
+    noise: { label: "Boundary noise (dB(A))", get: (d) => d.noise, digits: 1, events: ["noise_spike"] },
+    it:    { label: "IT energy (kWh)", get: (d) => d.it, digits: 0, events: ["it_surge"] },
+    other: { label: "Distribution losses (kWh)", get: (d) => d.other, digits: 0, events: ["ups_fault"] },
+  };
+  const DETECTION_METHODS = { residual: "Weather-adjusted residual", rolling: "Rolling z-score", iqr: "IQR fences" };
+
+  function benchmarkDetection(opts) {
+    const o = Object.assign({ seeds: [1, 2, 3, 4, 5], locations: Object.keys(LOCATIONS), coolingSystem: "evaporative", threshold: 3.5, window: 14 }, opts || {});
+    const acc = {};
+    Object.keys(ANOMALY_TARGETS).forEach((m) => { acc[m] = {}; Object.keys(DETECTION_METHODS).forEach((k) => { acc[m][k] = { tp: 0, fp: 0, fn: 0 }; }); });
+    let datasets = 0;
+    o.locations.forEach((loc) => o.seeds.forEach((seed) => {
+      const rows = generateDataset({ location: loc, coolingSystem: o.coolingSystem, seed, injectAnomalies: true });
+      const d = computeMetrics(rows, profileFromLocation(loc, o.coolingSystem)).daily;
+      const temps = d.map((x) => x.temp);
+      datasets++;
+      Object.entries(ANOMALY_TARGETS).forEach(([m, t]) => {
+        const vals = d.map(t.get), truth = d.map((x) => t.events.includes(x.event));
+        Object.keys(DETECTION_METHODS).forEach((method) => {
+          const f = detectAnomalies(vals, { method, threshold: o.threshold, window: o.window, x: temps }).map((x) => x.flag);
+          const e = evaluateDetection(f, truth);
+          acc[m][method].tp += e.tp; acc[m][method].fp += e.fp; acc[m][method].fn += e.fn;
+        });
+      });
+    }));
+    const fin = (a) => { const p = a.tp + a.fp ? a.tp / (a.tp + a.fp) : NaN, r = a.tp + a.fn ? a.tp / (a.tp + a.fn) : NaN; return Object.assign({}, a, { precision: p, recall: r, f1: p + r ? (2 * p * r) / (p + r) : NaN }); };
+    const table = {};
+    Object.keys(acc).forEach((m) => { table[m] = {}; Object.keys(acc[m]).forEach((k) => { table[m][k] = fin(acc[m][k]); }); });
+    return { datasets, days: datasets * 365, threshold: o.threshold, table };
+  }
+
+  // Precision/recall as the threshold changes, pooled over several datasets.
+  function detectionSweep(metric, method, opts) {
+    const o = Object.assign({ seeds: [1, 2, 3], locations: ["virginia", "karachi", "stockholm"], thresholds: [1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8] }, opts || {});
+    const t = ANOMALY_TARGETS[metric];
+    const sets = [];
+    o.locations.forEach((loc) => o.seeds.forEach((seed) => {
+      const d = computeMetrics(generateDataset({ location: loc, seed }), profileFromLocation(loc, "evaporative")).daily;
+      sets.push({ vals: d.map(t.get), truth: d.map((x) => t.events.includes(x.event)), temps: d.map((x) => x.temp) });
+    }));
+    return o.thresholds.map((th) => {
+      let tp = 0, fp = 0, fn = 0;
+      sets.forEach((s) => { const e = evaluateDetection(detectAnomalies(s.vals, { method, threshold: th, x: s.temps }).map((x) => x.flag), s.truth); tp += e.tp; fp += e.fp; fn += e.fn; });
+      const p = tp + fp ? tp / (tp + fp) : NaN, r = tp + fn ? tp / (tp + fn) : 0;
+      return { threshold: th, precision: p, recall: r, f1: p + r ? (2 * p * r) / (p + r) : NaN };
+    });
+  }
+
+  /* ---------------------------------------------------------- *
+   * 16. Usability: System Usability Scale (Brooke, 1996)
+   * ---------------------------------------------------------- */
+
+  const SUS_ITEMS = [
+    "I think that I would like to use this system frequently.",
+    "I found the system unnecessarily complex.",
+    "I thought the system was easy to use.",
+    "I think that I would need the support of a technical person to be able to use this system.",
+    "I found the various functions in this system were well integrated.",
+    "I thought there was too much inconsistency in this system.",
+    "I would imagine that most people would learn to use this system very quickly.",
+    "I found the system very cumbersome to use.",
+    "I felt very confident using the system.",
+    "I needed to learn a lot of things before I could get going with this system.",
+  ];
+  // Odd items: answer − 1. Even items: 5 − answer. Sum × 2.5 gives 0–100.
+  function susScore(answers) {
+    if (!answers || answers.length !== 10 || answers.some((a) => !(a >= 1 && a <= 5))) return NaN;
+    return answers.reduce((s, a, i) => s + (i % 2 === 0 ? a - 1 : 5 - a), 0) * 2.5;
+  }
+  // Adjective scale after Bangor, Kortum & Miller (2009).
+  function susAdjective(score) {
+    if (!isFinite(score)) return "–";
+    if (score >= 85.5) return "Excellent";
+    if (score >= 72.6) return "Good";
+    if (score >= 52) return "OK";
+    if (score >= 39.2) return "Poor";
+    return "Awful";
+  }
+
+  /* ---------------------------------------------------------- *
+   * 17. Verification: hand-calculated reference cases
    * ---------------------------------------------------------- *
    * Each case states inputs whose answer was worked out by hand. The
    * website shows these live on the Methodology page; tests/ runs them
@@ -689,12 +948,19 @@
       ["OLS R²", "perfect line", reg.r2, 1],
       ["Robust z (MAD)", "(100 − 3) ÷ (1.4826 × 1)", robust[4].score, 97 / 1.4826],
       ["GreenScore", "(25×100 + 15×0 + 60×50) ÷ 100", gs.score, 55],
+      ["SUS, neutral answers", "all answers 3 → 10 × 2 × 2.5", susScore([3, 3, 3, 3, 3, 3, 3, 3, 3, 3]), 50],
+      ["SUS, best answers", "odd 5, even 1 → 10 × 4 × 2.5", susScore([5, 1, 5, 1, 5, 1, 5, 1, 5, 1]), 100],
+      ["Spearman ρ, reversed ranks", "1 − 6·Σd² ÷ (n(n²−1)), n = 4", spearman([1, 2, 3, 4], [4, 3, 2, 1]), -1],
+      ["Derived WUE (Google 2023)", "6.1e9 × 3.78541 ÷ (24e9 ÷ 1.10)", analyseAnnual(PUBLIC_CASES[1]).kpis.wue, (6.1e9 * 3.78541) / (24e9 / 1.1)],
     ];
     return cases.map(([name, working, actual, expected]) => ({ name, working, actual, expected, pass: tol(actual, expected, 1e-4) }));
   }
 
   return {
-    ASSUMPTIONS, selfTest,
+    ASSUMPTIONS, selfTest, REGIONAL_SOURCES, PUBLIC_CASES, analyseAnnual,
+    weightOAT, monteCarloWeights, anchorSensitivity, spearman, ranks, dirichlet,
+    ANOMALY_TARGETS, DETECTION_METHODS, benchmarkDetection, detectionSweep,
+    SUS_ITEMS, susScore, susAdjective,
     DIMENSIONS, DEFAULT_WEIGHTS, BENCHMARKS, GRADES, LOCATIONS, COOLING_SYSTEMS, DEFAULT_LEVERS,
     CARBON_PRICE_PER_T, REQUIRED_COLUMNS, OPTIONAL_COLUMNS,
     generateDataset, parseCSV, toCSV, computeMetrics, scoreDimensions, greenScore, gradeFor,

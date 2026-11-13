@@ -1,0 +1,51 @@
+{
+ "app": "GreenDC",
+ "version": 1,
+ "savedAt": "2026-11-13T15:12:31.301Z",
+ "name": "Ashburn: path from grade C to A",
+ "source": "Simulated",
+ "gen": {
+  "location": "virginia",
+  "coolingSystem": "evaporative",
+  "itCapacityMW": 2,
+  "economiserAdoption": 0.6,
+  "days": 365,
+  "seed": 42,
+  "injectAnomalies": true
+ },
+ "rows": null,
+ "profile": {
+  "locationKey": "virginia",
+  "name": "Ashburn: path from grade C to A",
+  "gridCI": 384,
+  "renewablePct": 25,
+  "gridRenewablePct": 24,
+  "carbonPrice": 85,
+  "waterStress": 2.1,
+  "distanceM": 250,
+  "noiseLimit": 50,
+  "priceKwh": 0.08,
+  "priceWaterM3": 1.6,
+  "fcThreshold": 18,
+  "waterEnergyFactor": 1.8
+ },
+ "weights": {
+  "energy": 25,
+  "water": 15,
+  "cooling": 15,
+  "carbon": 25,
+  "noise": 10,
+  "location": 10
+ },
+ "levers": {
+  "setpointDelta": 2,
+  "economiserBoost": 0,
+  "itReduction": 0,
+  "lossReduction": 0,
+  "renewablePct": 100,
+  "waterReuse": 50,
+  "noiseMitigation": 8
+ },
+ "greenScore": 62.531866794747785,
+ "days": 365
+}

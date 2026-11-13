@@ -1,0 +1,51 @@
+{
+ "app": "GreenDC",
+ "version": 1,
+ "savedAt": "2026-11-13T15:12:31.311Z",
+ "name": "Karachi: liquid cooling with deep retrofit",
+ "source": "Simulated",
+ "gen": {
+  "location": "karachi",
+  "coolingSystem": "liquid",
+  "itCapacityMW": 2,
+  "economiserAdoption": 0.6,
+  "days": 365,
+  "seed": 42,
+  "injectAnomalies": true
+ },
+ "rows": null,
+ "profile": {
+  "locationKey": "karachi",
+  "name": "Karachi: liquid cooling with deep retrofit",
+  "gridCI": 374,
+  "renewablePct": 15,
+  "gridRenewablePct": 37,
+  "carbonPrice": 85,
+  "waterStress": 4.4,
+  "distanceM": 120,
+  "noiseLimit": 55,
+  "priceKwh": 0.14,
+  "priceWaterM3": 0.6,
+  "fcThreshold": 26,
+  "waterEnergyFactor": 1.8
+ },
+ "weights": {
+  "energy": 25,
+  "water": 15,
+  "cooling": 15,
+  "carbon": 25,
+  "noise": 10,
+  "location": 10
+ },
+ "levers": {
+  "setpointDelta": 4,
+  "economiserBoost": 70,
+  "itReduction": 15,
+  "lossReduction": 40,
+  "renewablePct": 100,
+  "waterReuse": 50,
+  "noiseMitigation": 8
+ },
+ "greenScore": 59.53139340237378,
+ "days": 365
+}

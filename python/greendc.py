@@ -42,15 +42,17 @@ BENCHMARKS = {
 GRADES = [(90, "A+", "Exemplary"), (80, "A", "Leading"), (70, "B", "Good"), (60, "C", "Fair"),
           (50, "D", "Needs improvement"), (40, "E", "Poor"), (0, "F", "Critical")]
 
+# grid_ci and grid_renewable_pct: national 2024 values, Our World in Data energy dataset
+# (Ember; Energy Institute). Other values are indicative assumptions (see the Methodology page).
 LOCATIONS = {
-    "stockholm": dict(grid_ci=40, renewable_pct=70, grid_renewable_pct=68, water_stress=0.6, distance_m=600, noise_limit=45, price_kwh=0.09, price_water_m3=2.6),
-    "dublin": dict(grid_ci=290, renewable_pct=40, grid_renewable_pct=40, water_stress=1.2, distance_m=350, noise_limit=45, price_kwh=0.22, price_water_m3=2.2),
-    "virginia": dict(grid_ci=370, renewable_pct=25, grid_renewable_pct=12, water_stress=2.1, distance_m=250, noise_limit=50, price_kwh=0.08, price_water_m3=1.6),
-    "phoenix": dict(grid_ci=380, renewable_pct=20, grid_renewable_pct=15, water_stress=4.6, distance_m=400, noise_limit=50, price_kwh=0.10, price_water_m3=1.9),
-    "singapore": dict(grid_ci=410, renewable_pct=5, grid_renewable_pct=4, water_stress=2.8, distance_m=150, noise_limit=55, price_kwh=0.21, price_water_m3=2.0),
-    "karachi": dict(grid_ci=430, renewable_pct=15, grid_renewable_pct=30, water_stress=4.4, distance_m=120, noise_limit=55, price_kwh=0.14, price_water_m3=0.6),
-    "mumbai": dict(grid_ci=710, renewable_pct=12, grid_renewable_pct=22, water_stress=3.9, distance_m=120, noise_limit=55, price_kwh=0.11, price_water_m3=0.5),
-    "sydney": dict(grid_ci=620, renewable_pct=30, grid_renewable_pct=35, water_stress=2.5, distance_m=300, noise_limit=50, price_kwh=0.18, price_water_m3=2.4),
+    "stockholm": dict(grid_ci=35, renewable_pct=70, grid_renewable_pct=69, water_stress=0.6, distance_m=600, noise_limit=45, price_kwh=0.09, price_water_m3=2.6),
+    "dublin": dict(grid_ci=271, renewable_pct=40, grid_renewable_pct=47, water_stress=1.2, distance_m=350, noise_limit=45, price_kwh=0.22, price_water_m3=2.2),
+    "virginia": dict(grid_ci=384, renewable_pct=25, grid_renewable_pct=24, water_stress=2.1, distance_m=250, noise_limit=50, price_kwh=0.08, price_water_m3=1.6),
+    "phoenix": dict(grid_ci=384, renewable_pct=20, grid_renewable_pct=24, water_stress=4.6, distance_m=400, noise_limit=50, price_kwh=0.10, price_water_m3=1.9),
+    "singapore": dict(grid_ci=499, renewable_pct=5, grid_renewable_pct=5, water_stress=2.8, distance_m=150, noise_limit=55, price_kwh=0.21, price_water_m3=2.0),
+    "karachi": dict(grid_ci=374, renewable_pct=15, grid_renewable_pct=37, water_stress=4.4, distance_m=120, noise_limit=55, price_kwh=0.14, price_water_m3=0.6),
+    "mumbai": dict(grid_ci=705, renewable_pct=12, grid_renewable_pct=20, water_stress=3.9, distance_m=120, noise_limit=55, price_kwh=0.11, price_water_m3=0.5),
+    "sydney": dict(grid_ci=554, renewable_pct=30, grid_renewable_pct=35, water_stress=2.5, distance_m=300, noise_limit=50, price_kwh=0.18, price_water_m3=2.4),
 }
 
 CARBON_PRICE_PER_T = 85.0
@@ -234,6 +236,28 @@ def green_score(scores: dict, weights: dict | None = None) -> float:
 
 
 # --------------------------------------------------------------------------- analytics
+
+def sus_score(answers) -> float:
+    """System Usability Scale (Brooke, 1996): odd items a-1, even items 5-a, sum x 2.5."""
+    if len(answers) != 10 or any(not 1 <= a <= 5 for a in answers):
+        return math.nan
+    return sum((a - 1) if i % 2 == 0 else (5 - a) for i, a in enumerate(answers)) * 2.5
+
+
+def annual_case(pue=None, wue=None, grid_ci=None, renewable_pct=None, energy_twh=None, water_billion_gal=None):
+    """Score published annual totals. Unknown inputs drop their dimension; returns (scores, green_score, coverage)."""
+    if wue is None and energy_twh and water_billion_gal and pue:
+        wue = water_billion_gal * 1e9 * 3.78541 / (energy_twh * 1e9 / pue)
+    cue = pue * grid_ci / 1000 * (1 - renewable_pct / 100) if None not in (pue, grid_ci, renewable_pct) else math.nan
+    S = lambda v, key: linear_score(v if v is not None else math.nan, *BENCHMARKS[key])
+    scores = {k: math.nan for k in DIMENSIONS}
+    scores["energy"] = S(pue, "pue")
+    scores["water"] = S(wue, "wue")
+    scores["carbon"] = S(cue, "cue")
+    gs = green_score(scores)
+    w = DEFAULT_WEIGHTS
+    coverage = sum(w[k] for k in DIMENSIONS if math.isfinite(scores[k])) / sum(w.values())
+    return scores, gs, coverage
 
 def linear_regression(xs, ys):
     pts = [(x, y) for x, y in zip(xs, ys) if math.isfinite(x) and math.isfinite(y)]

@@ -1071,6 +1071,9 @@
       <tr><td>Free-cooling threshold (daily mean outdoor temperature)</td><td class="n">18 °C</td><td>Cooling and location scores</td></tr>
       <tr><td>Free-cooling day counts as used when CLF is below</td><td class="n">0.15</td><td>Cooling score</td></tr>
     </tbody>`;
+    const L = G.LOCATIONS;
+    $("#regional-table").innerHTML = `<thead><tr><th>Value</th><th>Status</th><th>Source</th></tr></thead><tbody>${Object.values(G.REGIONAL_SOURCES).map((r) => `<tr><td>${r.label}</td><td><span class="pill ${r.status === "cited" ? "good" : "warn"}">${r.status}</span></td><td style="white-space:normal;min-width:260px">${esc(r.source)}</td></tr>`).join("")}</tbody>
+      <tbody><tr><th>Preset</th><th class="n">Grid gCO₂e/kWh</th><th class="n">Grid renewables %</th></tr>${Object.values(L).map((l) => `<tr><td>${esc(l.name)}</td><td class="n">${l.gridCI}</td><td class="n">${l.gridRenewablePct}</td></tr>`).join("")}</tbody>`;
     const B = G.BENCHMARKS;
     const names = { pue: "PUE", itUtil: "IT utilisation", wue: "WUE (site)", clf: "Cooling Load Factor", cue: "CUE (market-based)", noiseMargin: "Noise margin", gridCI: "Grid carbon intensity", waterStress: "Water stress", freeCooling: "Free-cooling days", renewables: "Grid renewable share", distance: "Distance to receivers" };
     $("#bench-table").innerHTML = `<thead><tr><th>Indicator</th><th class="n">Best (100)</th><th class="n">Worst (0)</th><th>Unit</th><th>Context</th></tr></thead><tbody>${Object.entries(B).map(([k, b]) => `<tr><td>${names[k]}</td><td class="n">${b.best}</td><td class="n">${b.worst}</td><td>${b.unit || "–"}</td><td style="white-space:normal;min-width:240px">${b.note}</td></tr>`).join("")}</tbody>`;
@@ -1105,6 +1108,12 @@
     if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender);
     new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
+  // Shared helpers for research.js (extra pages register themselves before boot runs).
+  window.GreenDCApp = {
+    state, G, $, $$, fmt, fmt0, signed, money, esc, kpi, calcRow, statusPill, scoreBar, draw, chartBase, legend, css,
+    DIM_COLOR, charts, RENDER, PAGES, applySnapshot, showMsg, download, store, locationComparison, drawGauge, drawRadar,
+    recompute, hasChart, clampNum,
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
-  else boot();
+  else setTimeout(boot, 0);
 })();
