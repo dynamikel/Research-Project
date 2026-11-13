@@ -56,6 +56,7 @@
     <header class="topbar">
       <div class="facility"><strong id="tb-name">Facility</strong><span id="tb-period">–</span></div>
       <span class="source-tag" id="tb-source">Simulated</span>
+      <span class="save-tag" id="tb-saved" role="status">Saving…</span>
       <div class="spacer"></div>
       <span class="chip-score">GreenScore <b id="tb-score">–</b> <span id="tb-grade"></span></span>
     </header>
@@ -119,7 +120,20 @@
         <div class="page-head">
           <div class="eyebrow">Step 1 · Ingest</div>
           <h1>Data &amp; facility profile</h1>
-          <p class="lede">Generate a simulated year of operations for a chosen location and cooling design, or upload your own daily CSV. Every page recalculates from this dataset.</p>
+          <p class="lede">Generate a simulated year of operations for a chosen location and cooling design, or upload your own daily CSV. Every page recalculates from this dataset. Your work is saved automatically in this browser.</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Saved projects</h3><p>Save each scenario you analyse, reopen it later, or move it to another computer as a project file</p></div>
+          <div class="btns" style="align-items:flex-end">
+            <div class="field" style="flex:1;min-width:200px"><label for="proj-name">Project name</label><input id="proj-name" type="text" maxlength="80"></div>
+            <button class="btn primary" id="btn-save-project" type="button">Save project</button>
+            <button class="btn" id="btn-export-project" type="button">Export project file</button>
+            <label class="btn file-btn">Import project file<input type="file" id="f-import" accept=".json,application/json"></label>
+            <button class="btn" id="btn-reset-all" type="button">Start over</button>
+          </div>
+          <div class="msg hidden" id="proj-msg" role="status"></div>
+          <div class="table-wrap"><table id="proj-table"></table></div>
         </div>
 
         <div class="grid grid-2">
@@ -154,12 +168,14 @@
           <form class="form" id="profile-form">
             <div class="field"><label for="p-name">Facility name</label><input id="p-name" type="text"></div>
             <div class="field"><label for="p-gridCI">Grid carbon intensity (gCO₂e/kWh)</label><input id="p-gridCI" type="number" min="0" step="1"><small>Used when the data has no grid_ci column</small></div>
-            <div class="field"><label for="p-renewablePct">Renewable supply (%)</label><input id="p-renewablePct" type="number" min="0" max="100" step="1"></div>
+            <div class="field"><label for="p-renewablePct">Contracted renewables (%)</label><input id="p-renewablePct" type="number" min="0" max="100" step="1"><small>PPA, green tariff or on-site; used for Carbon</small></div>
+            <div class="field"><label for="p-gridRenewablePct">Grid renewable share (%)</label><input id="p-gridRenewablePct" type="number" min="0" max="100" step="1"><small>Regional generation mix; used for Location</small></div>
             <div class="field"><label for="p-waterStress">Water stress (0–5)</label><input id="p-waterStress" type="number" min="0" max="5" step="0.1"><small>WRI Aqueduct scale</small></div>
             <div class="field"><label for="p-distanceM">Nearest receiver (m)</label><input id="p-distanceM" type="number" min="1" step="1"></div>
             <div class="field"><label for="p-noiseLimit">Noise limit (dB(A))</label><input id="p-noiseLimit" type="number" min="20" max="90" step="1"></div>
             <div class="field"><label for="p-priceKwh">Electricity price (USD/kWh)</label><input id="p-priceKwh" type="number" min="0" step="0.01"></div>
             <div class="field"><label for="p-priceWaterM3">Water price (USD/m³)</label><input id="p-priceWaterM3" type="number" min="0" step="0.1"></div>
+            <div class="field"><label for="p-carbonPrice">Carbon price (USD/tCO₂e)</label><input id="p-carbonPrice" type="number" min="0" step="1"></div>
             <div class="field"><label for="p-fcThreshold">Economiser threshold (°C)</label><input id="p-fcThreshold" type="number" min="-10" max="40" step="0.5"></div>
           </form>
         </div>
@@ -332,7 +348,32 @@
         <div class="page-head">
           <div class="eyebrow">Reference</div>
           <h1>Methodology</h1>
-          <p class="lede">Every formula, benchmark and modelling assumption used in GreenDC. The same equations are implemented in <code>website/assets/engine.js</code> and in the Python reference module <code>python/greendc.py</code>.</p>
+          <p class="lede">Every formula, benchmark and modelling assumption used in GreenDC. The same equations are implemented in <code>website/assets/engine.js</code> and in the Python reference module <code>python/greendc.py</code>, and both are checked against hand-calculated cases below.</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Standardised indicators and framework contributions</h2><p>What comes from published standards and what GreenDC proposes</p></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Indicator</th><th>Status</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr><td>PUE, DCiE</td><td><span class="pill good">Standard</span></td><td style="white-space:normal">ISO/IEC 30134-2; The Green Grid</td></tr>
+              <tr><td>WUE (site and source)</td><td><span class="pill good">Standard</span></td><td style="white-space:normal">ISO/IEC 30134-9; The Green Grid WUE</td></tr>
+              <tr><td>CUE</td><td><span class="pill good">Standard</span></td><td style="white-space:normal">ISO/IEC 30134-8; The Green Grid CUE</td></tr>
+              <tr><td>Renewable Energy Factor (ERF)</td><td><span class="pill good">Standard</span></td><td style="white-space:normal">ISO/IEC 30134-3</td></tr>
+              <tr><td>CLF, PLF, partial PUE</td><td><span class="pill good">Standard</span></td><td style="white-space:normal">The Green Grid PUE metric guidance</td></tr>
+              <tr><td>Scope 2 emissions (location- and market-based)</td><td><span class="pill good">Standard</span></td><td style="white-space:normal">GHG Protocol Scope 2 Guidance</td></tr>
+              <tr><td>Sound propagation and level addition</td><td><span class="pill good">Standard physics</span></td><td style="white-space:normal">Free-field point-source relation; simplified from ISO 9613-2</td></tr>
+              <tr><td>Cooling Efficiency Ratio</td><td><span class="pill warn">Common practice</span></td><td style="white-space:normal">System coefficient of performance, approximated with IT energy as heat load</td></tr>
+              <tr><td>Free-cooling utilisation, noise margin, stress-weighted water</td><td><span class="pill warn">GreenDC-defined</span></td><td style="white-space:normal">Proposed in this framework</td></tr>
+              <tr><td>Dimension scores, GreenScore, grades</td><td><span class="pill warn">GreenDC-defined</span></td><td style="white-space:normal">Proposed in this framework: linear benchmark normalisation and weighted aggregation</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Verification</h2><div id="val-summary"></div></div>
+          <p style="color:var(--ink-2);max-width:75ch">Each check runs the live GreenDC code on a small input whose answer was worked out by hand. Inputs: two days with IT 1000 and 1000 kWh, cooling 300 and 200 kWh, other 100 and 100 kWh, water 1500 and 500 L, grid intensity 400 and 500 g/kWh, 25 % contracted renewables. The same cases run in <code>tests/</code> for Node and Python.</p>
+          <div class="table-wrap"><table id="val-table"></table></div>
         </div>
 
         <div class="panel">
@@ -369,7 +410,7 @@
             <div class="calc-row"><span class="c-name">Cooling</span><span class="c-formula">0.75·S(CLF) + 0.25·S(FCU)</span></div>
             <div class="calc-row"><span class="c-name">Carbon</span><span class="c-formula">S(CUE market-based)</span></div>
             <div class="calc-row"><span class="c-name">Noise</span><span class="c-formula">S(limit − P95 level)</span></div>
-            <div class="calc-row"><span class="c-name">Location</span><span class="c-formula">mean of S(grid CI), S(water stress), S(free-cooling days), S(renewables), S(distance)</span></div>
+            <div class="calc-row"><span class="c-name">Location</span><span class="c-formula">mean of S(grid CI), S(water stress), S(free-cooling days), S(grid renewable share), S(distance)</span></div>
           </div>
         </div>
 
@@ -401,10 +442,15 @@
                 <li>Renewables: replaces RE% in the market-based emission factor.</li>
                 <li>Water reuse: potable water × (1 − r), with a cooling energy penalty of 7.5 % × r.</li>
                 <li>Noise mitigation: subtracts the attenuation in dB(A) from every daily level.</li>
-                <li>Carbon is valued at USD 85 per tonne CO₂e.</li>
+                <li>Carbon is valued at the facility carbon price (default USD 85 per tonne CO₂e, editable on the Data page).</li>
               </ul>
             </div>
           </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Modelling assumptions</h2><p>Coefficients that are assumed rather than measured; change them in <code>ASSUMPTIONS</code> in engine.js</p></div>
+          <div class="table-wrap"><table id="assump-table"></table></div>
         </div>
 
         <div class="panel">
@@ -440,13 +486,30 @@
             <h2>Limitations &amp; references</h2>
             <div class="prose">
               <ul>
-                <li>Regional presets are rounded indicative values for research demonstration, not certified data.</li>
+                <li>Regional presets are rounded indicative values for research demonstration, not certified data. Replace them with sourced figures for a specific study.</li>
+                <li>Market-based emissions apply the grid average to the non-renewable share. The GHG Protocol asks for a residual-mix factor, which is usually higher, so this underestimates market-based emissions where residual mixes are published.</li>
+                <li>Free-cooling potential uses daily mean dry-bulb temperature. Economiser design uses hourly dry- and wet-bulb data, so hourly data gives more precise results.</li>
+                <li>Noise uses daily representative levels. Planning limits are often night-time L<sub>Aeq</sub> values, so night-time data should be used where it exists.</li>
+                <li>The simulated dataset is synthetic. It shows how the framework behaves; it is not evidence about any real facility.</li>
                 <li>Noise uses free-field propagation only (no barriers, ground or air absorption as in ISO 9613-2).</li>
                 <li>Linear normalisation anchors are a design choice; adjust them in <code>engine.js</code> for other benchmarks.</li>
-                <li>The Green Grid, <em>PUE, WUE and CUE</em> white papers; ISO/IEC 30134 series (KPIs for data centres).</li>
-                <li>ASHRAE TC 9.9, <em>Thermal Guidelines for Data Processing Environments</em>.</li>
-                <li>GHG Protocol, <em>Scope 2 Guidance</em> (location- and market-based methods).</li>
-                <li>WRI Aqueduct 4.0 water risk atlas; Uptime Institute Global Data Center Survey.</li>
+              </ul>
+              <h3>References</h3>
+              <ul>
+                <li>ISO/IEC 30134-2:2016, <em>Data centres: Key performance indicators. Part 2: Power usage effectiveness (PUE)</em>.</li>
+                <li>ISO/IEC 30134-3:2016, <em>Part 3: Renewable energy factor (REF)</em>.</li>
+                <li>ISO/IEC 30134-8:2022, <em>Part 8: Carbon usage effectiveness (CUE)</em>.</li>
+                <li>ISO/IEC 30134-9:2022, <em>Part 9: Water usage effectiveness (WUE)</em>.</li>
+                <li>The Green Grid (2011), <em>WUE: A Green Grid Data Center Sustainability Metric</em>, White Paper #35.</li>
+                <li>The Green Grid (2010), <em>Carbon Usage Effectiveness (CUE)</em>, White Paper #32.</li>
+                <li>The Green Grid (2012), <em>PUE: A Comprehensive Examination of the Metric</em>, White Paper #49.</li>
+                <li>ASHRAE TC 9.9 (2021), <em>Thermal Guidelines for Data Processing Environments</em>, 5th ed.</li>
+                <li>World Resources Institute (2015), <em>GHG Protocol Scope 2 Guidance</em>.</li>
+                <li>ISO 9613-2:1996, <em>Acoustics: Attenuation of sound during propagation outdoors</em>.</li>
+                <li>Kuzma, S. et al. (2023), <em>Aqueduct 4.0</em>, World Resources Institute.</li>
+                <li>Shehabi, A. et al. (2016), <em>United States Data Center Energy Usage Report</em>, LBNL-1005775.</li>
+                <li>Uptime Institute (2024), <em>Global Data Center Survey</em>.</li>
+                <li>Iglewicz, B. &amp; Hoaglin, D. (1993), <em>How to Detect and Handle Outliers</em> (modified z-score with MAD).</li>
               </ul>
             </div>
           </div>

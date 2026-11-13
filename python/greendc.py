@@ -43,14 +43,14 @@ GRADES = [(90, "A+", "Exemplary"), (80, "A", "Leading"), (70, "B", "Good"), (60,
           (50, "D", "Needs improvement"), (40, "E", "Poor"), (0, "F", "Critical")]
 
 LOCATIONS = {
-    "stockholm": dict(grid_ci=40, renewable_pct=70, water_stress=0.6, distance_m=600, noise_limit=45, price_kwh=0.09, price_water_m3=2.6),
-    "dublin": dict(grid_ci=290, renewable_pct=40, water_stress=1.2, distance_m=350, noise_limit=45, price_kwh=0.22, price_water_m3=2.2),
-    "virginia": dict(grid_ci=370, renewable_pct=25, water_stress=2.1, distance_m=250, noise_limit=50, price_kwh=0.08, price_water_m3=1.6),
-    "phoenix": dict(grid_ci=380, renewable_pct=20, water_stress=4.6, distance_m=400, noise_limit=50, price_kwh=0.10, price_water_m3=1.9),
-    "singapore": dict(grid_ci=410, renewable_pct=5, water_stress=2.8, distance_m=150, noise_limit=55, price_kwh=0.21, price_water_m3=2.0),
-    "karachi": dict(grid_ci=430, renewable_pct=15, water_stress=4.4, distance_m=120, noise_limit=55, price_kwh=0.14, price_water_m3=0.6),
-    "mumbai": dict(grid_ci=710, renewable_pct=12, water_stress=3.9, distance_m=120, noise_limit=55, price_kwh=0.11, price_water_m3=0.5),
-    "sydney": dict(grid_ci=620, renewable_pct=30, water_stress=2.5, distance_m=300, noise_limit=50, price_kwh=0.18, price_water_m3=2.4),
+    "stockholm": dict(grid_ci=40, renewable_pct=70, grid_renewable_pct=68, water_stress=0.6, distance_m=600, noise_limit=45, price_kwh=0.09, price_water_m3=2.6),
+    "dublin": dict(grid_ci=290, renewable_pct=40, grid_renewable_pct=40, water_stress=1.2, distance_m=350, noise_limit=45, price_kwh=0.22, price_water_m3=2.2),
+    "virginia": dict(grid_ci=370, renewable_pct=25, grid_renewable_pct=12, water_stress=2.1, distance_m=250, noise_limit=50, price_kwh=0.08, price_water_m3=1.6),
+    "phoenix": dict(grid_ci=380, renewable_pct=20, grid_renewable_pct=15, water_stress=4.6, distance_m=400, noise_limit=50, price_kwh=0.10, price_water_m3=1.9),
+    "singapore": dict(grid_ci=410, renewable_pct=5, grid_renewable_pct=4, water_stress=2.8, distance_m=150, noise_limit=55, price_kwh=0.21, price_water_m3=2.0),
+    "karachi": dict(grid_ci=430, renewable_pct=15, grid_renewable_pct=30, water_stress=4.4, distance_m=120, noise_limit=55, price_kwh=0.14, price_water_m3=0.6),
+    "mumbai": dict(grid_ci=710, renewable_pct=12, grid_renewable_pct=22, water_stress=3.9, distance_m=120, noise_limit=55, price_kwh=0.11, price_water_m3=0.5),
+    "sydney": dict(grid_ci=620, renewable_pct=30, grid_renewable_pct=35, water_stress=2.5, distance_m=300, noise_limit=50, price_kwh=0.18, price_water_m3=2.4),
 }
 
 CARBON_PRICE_PER_T = 85.0
@@ -60,13 +60,15 @@ WATER_ENERGY_FACTOR = 1.8  # litres consumed at the power plant per kWh generate
 @dataclass
 class Profile:
     grid_ci: float = 370
-    renewable_pct: float = 25
+    renewable_pct: float = 25          # contracted by the facility (Carbon dimension)
+    grid_renewable_pct: float = 12     # regional grid mix (Location dimension)
     water_stress: float = 2.1
     distance_m: float = 250
     noise_limit: float = 50
     price_kwh: float = 0.08
     price_water_m3: float = 1.6
     fc_threshold: float = 18.0
+    carbon_price: float = 85.0
 
 
 @dataclass
@@ -182,6 +184,8 @@ def compute_metrics(days: list[Day], p: Profile) -> dict:
         "wue_source": (water + WATER_ENERGY_FACTOR * total) / it,
         "water_stress_weighted_m3": water / 1000 * (1 + p.water_stress / 5),
         "clf": cooling / it,
+        "plf": other / it,
+        "erf": ren,
         "cer": it / cooling if cooling else math.nan,
         "ppue_cooling": (it + cooling) / it,
         "free_cooling_days_pct": fc_days_pct,
@@ -195,7 +199,7 @@ def compute_metrics(days: list[Day], p: Profile) -> dict:
         "noise_exceed_days": sum(1 for d in days if d.noise_dba > p.noise_limit) if has_noise else math.nan,
         "energy_cost": total * p.price_kwh,
         "water_cost": water / 1000 * p.price_water_m3,
-        "carbon_cost": co2_mkt / 1000 * CARBON_PRICE_PER_T,
+        "carbon_cost": co2_mkt / 1000 * p.carbon_price,
     }
 
 
@@ -216,7 +220,7 @@ def score_dimensions(m: dict, p: Profile) -> dict:
         "noise": _weighted([(S(m["noise_margin"], "noise_margin"), 1)]),
         "location": _weighted([
             (S(p.grid_ci, "grid_ci"), 1), (S(p.water_stress, "water_stress"), 1),
-            (S(m["free_cooling_days_pct"], "free_cooling"), 1), (S(p.renewable_pct, "renewables"), 1),
+            (S(m["free_cooling_days_pct"], "free_cooling"), 1), (S(p.grid_renewable_pct, "renewables"), 1),
             (S(p.distance_m, "distance"), 1),
         ]),
     }

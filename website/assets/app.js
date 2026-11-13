@@ -111,11 +111,60 @@
       <text x="${cx}" y="${cy + 74}" text-anchor="middle" font-size="11" letter-spacing="1.5" fill="var(--muted)" font-family="IBM Plex Sans, sans-serif">GREENSCORE</text>`;
   }
 
+  /* ---------------- saving ----------------
+   * The working session is saved automatically in this browser
+   * (localStorage). Named projects can be saved, reopened, exported to
+   * a .json project file and imported on another computer. Simulated
+   * datasets are stored as their generator settings (they are seeded,
+   * so they regenerate identically); uploaded datasets are stored row by row.
+   */
+  const STORE_KEY = "greendc.workspace.v1";
+  const PROJECTS_KEY = "greendc.projects.v1";
+  const store = {
+    get(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
+    set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch (e) { return false; } },
+    remove(key) { try { localStorage.removeItem(key); } catch (e) { /* ignore */ } },
+  };
+  function snapshot() {
+    return {
+      app: "GreenDC", version: 1, savedAt: new Date().toISOString(),
+      name: state.profile.name, source: state.source, gen: state.gen,
+      rows: state.source === "Simulated" ? null : state.rows,
+      profile: state.profile, weights: state.weights, levers: state.levers,
+      greenScore: state.result ? state.result.green.score : null,
+      days: state.rows.length,
+    };
+  }
+  function applySnapshot(snap) {
+    if (!snap || snap.app !== "GreenDC" || !snap.profile) throw new Error("This is not a GreenDC project file.");
+    state.gen = Object.assign({}, state.gen, snap.gen || {});
+    state.rows = snap.rows && snap.rows.length ? snap.rows : G.generateDataset(state.gen);
+    state.source = snap.source || (snap.rows ? "Uploaded" : "Simulated");
+    state.profile = Object.assign(G.profileFromLocation(state.gen.location, state.gen.coolingSystem), snap.profile);
+    state.weights = Object.assign({}, G.DEFAULT_WEIGHTS, snap.weights || {});
+    state.levers = Object.assign({}, G.DEFAULT_LEVERS, { renewablePct: state.profile.renewablePct }, snap.levers || {});
+    locationCache = null;
+    syncGenForm();
+    fillProfileForm();
+    recompute();
+  }
+  let saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const ok = store.set(STORE_KEY, snapshot());
+      const el = $("#tb-saved");
+      if (el) el.textContent = ok ? "Saved in this browser · " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not saved: browser storage is blocked";
+    }, 400);
+  }
+  const listProjects = () => store.get(PROJECTS_KEY) || [];
+
   /* ---------------- pipeline ---------------- */
   function recompute() {
     state.result = G.analyse(state.rows, state.profile, state.weights);
     renderHeader();
     renderPage(state.page);
+    scheduleSave();
   }
 
   function generate() {
@@ -209,7 +258,7 @@
   /* ======================================================
    *  DATA
    * ====================================================== */
-  const PROFILE_FIELDS = ["gridCI", "renewablePct", "waterStress", "distanceM", "noiseLimit", "priceKwh", "priceWaterM3", "fcThreshold"];
+  const PROFILE_FIELDS = ["gridCI", "renewablePct", "gridRenewablePct", "waterStress", "distanceM", "noiseLimit", "priceKwh", "priceWaterM3", "carbonPrice", "fcThreshold"];
   function setupDataForms() {
     $("#f-location").innerHTML = Object.entries(G.LOCATIONS).map(([k, v]) => `<option value="${k}">${esc(v.name)}</option>`).join("");
     $("#f-cooling").innerHTML = Object.entries(G.COOLING_SYSTEMS).map(([k, v]) => `<option value="${k}">${esc(v.name)}</option>`).join("");
@@ -268,6 +317,15 @@
     $("#btn-export-data").addEventListener("click", () => download("greendc_dataset.csv", G.toCSV(state.rows, G.REQUIRED_COLUMNS.concat(G.OPTIONAL_COLUMNS)), "text/csv"));
   }
   function clampNum(v, lo, hi, dflt) { const n = Number(v); return isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt; }
+  function syncGenForm() {
+    $("#f-location").value = state.gen.location;
+    $("#f-cooling").value = state.gen.coolingSystem;
+    $("#f-capacity").value = state.gen.itCapacityMW;
+    $("#f-econ").value = Math.round(state.gen.economiserAdoption * 100);
+    $("#f-days").value = state.gen.days;
+    $("#f-seed").value = state.gen.seed;
+    $("#f-anom").checked = !!state.gen.injectAnomalies;
+  }
   function fillProfileForm() {
     $("#p-name").value = state.profile.name;
     PROFILE_FIELDS.forEach((f) => { $("#p-" + f).value = state.profile[f]; });
@@ -291,7 +349,75 @@
     } catch (e) { /* downloads can be blocked in sandboxed previews */ }
   }
 
+  /* ---------------- saved projects panel ---------------- */
+  let pendingDelete = null, pendingReset = false;
+  function renderProjects() {
+    const list = listProjects();
+    $("#proj-name").placeholder = state.profile.name;
+    $("#proj-table").innerHTML = list.length ? `<thead><tr><th>Project</th><th>Data</th><th class="n">Days</th><th class="n">GreenScore</th><th>Saved</th><th></th></tr></thead>
+      <tbody>${list.map((p, i) => `<tr><td>${esc(p.title)}</td><td>${esc(p.snap.source)}</td><td class="n">${p.snap.days}</td><td class="n">${fmt(p.snap.greenScore, 1)}</td><td>${new Date(p.snap.savedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</td>
+        <td><div class="btns" style="flex-wrap:nowrap"><button class="btn small" type="button" data-open="${i}">Open</button><button class="btn small" type="button" data-del="${i}">${pendingDelete === i ? "Confirm delete" : "Delete"}</button></div></td></tr>`).join("")}</tbody>`
+      : `<tbody><tr><td style="white-space:normal;color:var(--ink-2)">No saved projects yet. Name the current analysis above and choose Save project. Your work in progress is also saved automatically.</td></tr></tbody>`;
+    $("#btn-reset-all").textContent = pendingReset ? "Confirm: clear and start over" : "Start over";
+  }
+  function setupProjects() {
+    $("#btn-save-project").addEventListener("click", () => {
+      const title = ($("#proj-name").value || state.profile.name).trim();
+      const list = listProjects().filter((p) => p.title !== title);
+      list.unshift({ title, snap: snapshot() });
+      if (store.set(PROJECTS_KEY, list)) showMsg("#proj-msg", `Saved “${title}”. It stays in this browser until you delete it.`, "ok");
+      else showMsg("#proj-msg", "This browser blocks storage, so the project was not saved. Use Export project file instead.", "err");
+      $("#proj-name").value = "";
+      renderProjects();
+    });
+    $("#proj-table").addEventListener("click", (e) => {
+      const t = e.target, list = listProjects();
+      if (t.dataset.open !== undefined) {
+        const p = list[Number(t.dataset.open)];
+        applySnapshot(p.snap);
+        showMsg("#proj-msg", `Opened “${p.title}”.`, "ok");
+      } else if (t.dataset.del !== undefined) {
+        const i = Number(t.dataset.del);
+        if (pendingDelete === i) {
+          const removed = list.splice(i, 1)[0];
+          store.set(PROJECTS_KEY, list);
+          pendingDelete = null;
+          showMsg("#proj-msg", `Deleted “${removed.title}”.`, "ok");
+        } else pendingDelete = i;
+        renderProjects();
+      }
+    });
+    $("#btn-export-project").addEventListener("click", () => {
+      const slug = state.profile.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "project";
+      download(`greendc-${slug}.json`, JSON.stringify(Object.assign(snapshot(), { rows: state.rows }), null, 1), "application/json");
+      showMsg("#proj-msg", "Project file downloaded. It contains the full dataset, parameters, weights and simulator settings.", "ok");
+    });
+    $("#f-import").addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try { applySnapshot(JSON.parse(String(reader.result))); showMsg("#proj-msg", `Imported ${file.name}.`, "ok"); }
+        catch (err) { showMsg("#proj-msg", err.message.startsWith("This is not") ? err.message : "The file could not be read as a GreenDC project (.json).", "err"); }
+        e.target.value = "";
+      };
+      reader.readAsText(file);
+    });
+    $("#btn-reset-all").addEventListener("click", () => {
+      if (!pendingReset) { pendingReset = true; renderProjects(); return; }
+      pendingReset = false;
+      store.remove(STORE_KEY);
+      state.gen = { location: "virginia", coolingSystem: "evaporative", itCapacityMW: 2, economiserAdoption: 0.6, days: 365, seed: 42, injectAnomalies: true };
+      state.weights = Object.assign({}, G.DEFAULT_WEIGHTS);
+      state.profile = null;
+      syncGenForm();
+      generate();
+      showMsg("#proj-msg", "Started over with the default simulated facility. Saved projects were kept.", "ok");
+    });
+  }
+
   function renderData() {
+    renderProjects();
     const rows = state.rows, k = state.result.metrics.kpis;
     const cols = G.REQUIRED_COLUMNS.concat(G.OPTIONAL_COLUMNS).filter((c) => rows[0] && c in rows[0]);
     const events = rows.filter((r) => r.event).length;
@@ -365,6 +491,7 @@
           ${calcRow("Total facility energy", "E_total = E_IT + E_cooling + E_other", `${fmt0(k.itMWh)} + ${fmt0(k.coolingMWh)} + ${fmt0(k.otherMWh)} = <b>${fmt0(k.totalMWh)} MWh</b>`)}
           ${calcRow("Power Usage Effectiveness", "PUE = E_total ÷ E_IT", `${fmt0(k.totalMWh)} ÷ ${fmt0(k.itMWh)} = <b>${fmt(k.pue, 3)}</b>`)}
           ${calcRow("DCiE", "DCiE = E_IT ÷ E_total × 100", `${fmt0(k.itMWh)} ÷ ${fmt0(k.totalMWh)} × 100 = <b>${fmt(k.dcie, 1)} %</b>`)}
+          ${calcRow("Load factors (Green Grid)", "CLF = E_cooling ÷ E_IT,  PLF = E_other ÷ E_IT", `CLF ${fmt(k.clf, 3)}, PLF ${fmt(k.plf, 3)} → 1 + CLF + PLF = <b>${fmt(1 + k.clf + k.plf, 3)}</b> (equals PUE)`)}
           ${calcRow("Overhead energy", "E_overhead = E_total − E_IT", `${fmt0(k.totalMWh)} − ${fmt0(k.itMWh)} = <b>${fmt0(k.totalMWh - k.itMWh)} MWh</b> (${fmt((1 - 1 / k.pue) * 100, 1)} % of the total)`)}
           ${calcRow("Energy cost", "C = E_total × price", `${fmt0(k.totalMWh * 1000)} kWh × $${fmt(p.priceKwh, 2)} = <b>$${fmt0(k.energyCost)}</b>`)}
           ${scoreCalc("energy")}
@@ -489,7 +616,7 @@
 
   function renderCarbon() {
     const r = state.result, k = r.metrics.kpis, p = state.profile, m = r.metrics.monthly;
-    const cars = (k.co2MktT * k.annualise) / 4.6;
+    const cars = (k.co2MktT * k.annualise) / G.ASSUMPTIONS.carTonnesPerYear;
     $("#page-carbon").innerHTML = dimShell("carbon", "Dimension 4 · Carbon emissions", "Carbon emissions & CUE",
       "Scope 2 emissions from purchased electricity, by the GHG Protocol location-based method (grid average) and market-based method (after renewable contracts).") + `
       <div class="kpis">
@@ -497,8 +624,8 @@
         ${kpi("Market-based", fmt0(k.co2MktT), "tCO₂e")}
         ${kpi("CUE", fmt(k.cue, 3), "kgCO₂e/kWh", `location-based ${fmt(k.cueLoc, 3)}`)}
         ${kpi("Average grid intensity", fmt0(k.avgGridCI), "g/kWh")}
-        ${kpi("Renewable energy", fmt0(k.renewableMWh), "MWh", `${fmt0(k.renewablePct)} % of supply`)}
-        ${kpi("Carbon cost", money(k.carbonCost), "", `at $${G.CARBON_PRICE_PER_T}/t`)}
+        ${kpi("Renewable energy", fmt0(k.renewableMWh), "MWh", `ERF ${fmt(k.erf, 2)} (contracted)`)}
+        ${kpi("Carbon cost", money(k.carbonCost), "", `at $${fmt0(k.carbonPrice)}/t`)}
         ${kpi("Equivalent cars", fmt0(cars), "per year", "4.6 tCO₂e per car-year")}
       </div>
       <div class="split">
@@ -511,7 +638,8 @@
           ${calcRow("Market-based emissions", "CO₂_mkt = CO₂_loc × (1 − RE%)", `${fmt(k.co2LocT, 1)} × (1 − ${fmt(k.renewablePct / 100, 2)}) = <b>${fmt(k.co2MktT, 1)} t</b>`)}
           ${calcRow("Carbon Usage Effectiveness", "CUE = CO₂_mkt (kg) ÷ E_IT (kWh)", `${fmt0(k.co2MktT * 1000)} ÷ ${fmt0(k.itMWh * 1000)} = <b>${fmt(k.cue, 4)} kg/kWh</b>`)}
           ${calcRow("Identity check", "CUE = PUE × CI × (1 − RE%)", `${fmt(k.pue, 3)} × ${fmt(k.avgGridCI / 1000, 4)} × ${fmt(1 - k.renewablePct / 100, 2)} = <b>${fmt(k.pue * (k.avgGridCI / 1000) * (1 - k.renewablePct / 100), 4)}</b>`)}
-          ${calcRow("Carbon cost", "C = CO₂_mkt × carbon price", `${fmt(k.co2MktT, 1)} × $${G.CARBON_PRICE_PER_T} = <b>$${fmt0(k.carbonCost)}</b>`)}
+          ${calcRow("Renewable Energy Factor (ISO/IEC 30134-3)", "ERF = E_renewable ÷ E_total", `${fmt0(k.renewableMWh)} ÷ ${fmt0(k.totalMWh)} = <b>${fmt(k.erf, 3)}</b>`)}
+          ${calcRow("Carbon cost", "C = CO₂_mkt × carbon price", `${fmt(k.co2MktT, 1)} × $${fmt0(k.carbonPrice)} = <b>$${fmt0(k.carbonCost)}</b>`)}
           ${scoreCalc("carbon")}
         </div></div>
       </div>`;
@@ -607,7 +735,7 @@
       "Where a data centre is built fixes much of its footprint: the carbon intensity of the grid, the scarcity of water, how many hours outside air can cool the hall, and how close the neighbours are.") + `
       <div class="kpis">
         ${kpi("Grid intensity", fmt0(p.gridCI), "gCO₂e/kWh")}
-        ${kpi("Renewables", fmt0(p.renewablePct), "%")}
+        ${kpi("Grid renewables", fmt0(p.gridRenewablePct), "%", "regional generation mix")}
         ${kpi("Water stress", fmt(p.waterStress, 1), "/ 5")}
         ${kpi("Free-cooling climate", fmt(k.freeCoolingDaysPct, 0), "% days")}
         ${kpi("Nearest receiver", fmt0(p.distanceM), "m")}
@@ -795,12 +923,12 @@
    *  SIMULATOR
    * ====================================================== */
   const LEVERS = [
-    { key: "setpointDelta", label: "Raise supply-air setpoint", min: 0, max: 6, step: 0.5, unit: "°C", help: "ASHRAE A1 recommends 18–27 °C supply air; ~4 % cooling saving per °C" },
+    { key: "setpointDelta", label: "Raise supply-air setpoint", min: 0, max: 6, step: 0.5, unit: "°C", help: "ASHRAE recommended inlet range is 18–27 °C. Assumes 4 % less cooling energy and 2 % less water per °C" },
     { key: "economiserBoost", label: "Extend economiser (free cooling)", min: 0, max: 100, step: 5, unit: "%", help: "Share of mechanical cooling removed on days below the threshold" },
     { key: "itReduction", label: "Virtualise and consolidate servers", min: 0, max: 30, step: 1, unit: "%", help: "IT energy saved; cooling, losses and water scale with it" },
     { key: "lossReduction", label: "Cut distribution & lighting losses", min: 0, max: 60, step: 5, unit: "%", help: "Eco-mode UPS, high-efficiency transformers, LED lighting" },
     { key: "renewablePct", label: "Renewable electricity supply", min: 0, max: 100, step: 5, unit: "%", help: "PPA, green tariff or on-site solar (market-based Scope 2)" },
-    { key: "waterReuse", label: "Water reuse / closed loop", min: 0, max: 90, step: 5, unit: "%", help: "Potable water avoided; adds up to 7.5 % cooling energy" },
+    { key: "waterReuse", label: "Water reuse / closed loop", min: 0, max: 90, step: 5, unit: "%", help: "Potable water avoided; assumes up to 7.5 % more cooling energy at 100 %" },
     { key: "noiseMitigation", label: "Acoustic mitigation", min: 0, max: 15, step: 1, unit: "dB", help: "Enclosures, low-noise fans, barriers" },
   ];
   const PRESETS = {
@@ -927,8 +1055,24 @@
    *  METHODOLOGY
    * ====================================================== */
   function renderMethodology() {
+    const tests = G.selfTest();
+    const passed = tests.filter((t) => t.pass).length;
+    $("#val-summary").innerHTML = `<span class="pill ${passed === tests.length ? "good" : "bad"}">${passed} of ${tests.length} checks pass</span>`;
+    $("#val-table").innerHTML = `<thead><tr><th>Check</th><th>Hand calculation</th><th class="n">Expected</th><th class="n">GreenDC result</th><th>Result</th></tr></thead><tbody>${tests.map((t) => `<tr><td>${esc(t.name)}</td><td class="mono">${esc(t.working)}</td><td class="n">${fmt(t.expected, 4)}</td><td class="n">${fmt(t.actual, 4)}</td><td>${t.pass ? '<span class="pill good">Pass</span>' : '<span class="pill bad">Fail</span>'}</td></tr>`).join("")}</tbody>`;
+    const A = G.ASSUMPTIONS;
+    $("#assump-table").innerHTML = `<thead><tr><th>Assumption</th><th class="n">Value</th><th>Used in</th></tr></thead><tbody>
+      <tr><td>Cooling energy saved per °C setpoint rise</td><td class="n">${fmt(A.coolingSavingPerDegC * 100, 1)} %</td><td>Simulator</td></tr>
+      <tr><td>Water saved per °C setpoint rise</td><td class="n">${fmt(A.waterSavingPerDegC * 100, 1)} %</td><td>Simulator</td></tr>
+      <tr><td>Residual cooling with full economiser (CLF floor)</td><td class="n">${fmt(A.economiserFloorCLF, 2)}</td><td>Simulator</td></tr>
+      <tr><td>Extra cooling energy at 100 % water reuse</td><td class="n">${fmt(A.waterReusePenalty * 100, 1)} %</td><td>Simulator</td></tr>
+      <tr><td>Energy water intensity factor (EWIF)</td><td class="n">${fmt(A.waterEnergyFactor, 1)} L/kWh</td><td>Source WUE</td></tr>
+      <tr><td>Passenger car emissions</td><td class="n">${fmt(A.carTonnesPerYear, 1)} t/yr</td><td>Carbon equivalence</td></tr>
+      <tr><td>Carbon price (default, editable per facility)</td><td class="n">$${G.CARBON_PRICE_PER_T}/t</td><td>Cost of carbon</td></tr>
+      <tr><td>Free-cooling threshold (daily mean outdoor temperature)</td><td class="n">18 °C</td><td>Cooling and location scores</td></tr>
+      <tr><td>Free-cooling day counts as used when CLF is below</td><td class="n">0.15</td><td>Cooling score</td></tr>
+    </tbody>`;
     const B = G.BENCHMARKS;
-    const names = { pue: "PUE", itUtil: "IT utilisation", wue: "WUE (site)", clf: "Cooling Load Factor", cue: "CUE (market-based)", noiseMargin: "Noise margin", gridCI: "Grid carbon intensity", waterStress: "Water stress", freeCooling: "Free-cooling days", renewables: "Renewable share", distance: "Distance to receivers" };
+    const names = { pue: "PUE", itUtil: "IT utilisation", wue: "WUE (site)", clf: "Cooling Load Factor", cue: "CUE (market-based)", noiseMargin: "Noise margin", gridCI: "Grid carbon intensity", waterStress: "Water stress", freeCooling: "Free-cooling days", renewables: "Grid renewable share", distance: "Distance to receivers" };
     $("#bench-table").innerHTML = `<thead><tr><th>Indicator</th><th class="n">Best (100)</th><th class="n">Worst (0)</th><th>Unit</th><th>Context</th></tr></thead><tbody>${Object.entries(B).map(([k, b]) => `<tr><td>${names[k]}</td><td class="n">${b.best}</td><td class="n">${b.worst}</td><td>${b.unit || "–"}</td><td style="white-space:normal;min-width:240px">${b.note}</td></tr>`).join("")}</tbody>`;
   }
 
@@ -949,7 +1093,11 @@
     $("#anom-form").addEventListener("change", renderAnomalies);
     $("#fc-form").addEventListener("input", renderForecast);
     $("#fc-form").addEventListener("change", renderForecast);
-    generate();
+    setupProjects();
+    const saved = store.get(STORE_KEY);
+    let restored = false;
+    if (saved) { try { applySnapshot(saved); restored = true; } catch (e) { restored = false; } }
+    if (!restored) generate();
     window.addEventListener("hashchange", route);
     route();
     // Re-draw charts when the theme changes so they pick up the new tokens.

@@ -41,7 +41,7 @@
     gridCI:     { best: 50,   worst: 800,  unit: "gCO₂e/kWh", note: "Nordic hydro ≈ 30–50, coal-heavy grids ≈ 700–900" },
     waterStress:{ best: 0,    worst: 5,    unit: "0–5",     note: "WRI Aqueduct baseline water stress scale" },
     freeCooling:{ best: 100,  worst: 0,    unit: "% days",  note: "Share of days below the economiser threshold" },
-    renewables: { best: 100,  worst: 0,    unit: "%",       note: "Contracted or on-site renewable share" },
+    renewables: { best: 100,  worst: 0,    unit: "%",       note: "Renewable share of the regional grid" },
     distance:   { best: 1000, worst: 50,   unit: "m",       note: "Distance to the nearest noise-sensitive receiver" },
   };
 
@@ -57,15 +57,19 @@
 
   // Indicative regional values for simulation. They are rounded public
   // figures meant for research demonstration, not certified data.
+  //   gridCI           average grid emission factor, gCO2e/kWh
+  //   renewablePct     renewable electricity the FACILITY contracts (PPA, green tariff, on-site)
+  //   gridRenewablePct renewable share of the REGIONAL grid (used only in the location score)
+  //   waterStress      WRI Aqueduct baseline water stress, 0-5
   const LOCATIONS = {
-    stockholm: { name: "Stockholm, Sweden",     tempMean: 7.5,  tempAmp: 9.5, hemisphere: "N", gridCI: 40,  renewablePct: 70, waterStress: 0.6, distanceM: 600, noiseLimit: 45, priceKwh: 0.09, priceWaterM3: 2.6 },
-    dublin:    { name: "Dublin, Ireland",       tempMean: 10.0, tempAmp: 5.0, hemisphere: "N", gridCI: 290, renewablePct: 40, waterStress: 1.2, distanceM: 350, noiseLimit: 45, priceKwh: 0.22, priceWaterM3: 2.2 },
-    virginia:  { name: "Ashburn, Virginia, US", tempMean: 13.5, tempAmp: 11.5, hemisphere: "N", gridCI: 370, renewablePct: 25, waterStress: 2.1, distanceM: 250, noiseLimit: 50, priceKwh: 0.08, priceWaterM3: 1.6 },
-    phoenix:   { name: "Phoenix, Arizona, US",  tempMean: 24.0, tempAmp: 10.0, hemisphere: "N", gridCI: 380, renewablePct: 20, waterStress: 4.6, distanceM: 400, noiseLimit: 50, priceKwh: 0.10, priceWaterM3: 1.9 },
-    singapore: { name: "Singapore",             tempMean: 27.8, tempAmp: 1.0, hemisphere: "N", gridCI: 410, renewablePct: 5,  waterStress: 2.8, distanceM: 150, noiseLimit: 55, priceKwh: 0.21, priceWaterM3: 2.0 },
-    karachi:   { name: "Karachi, Pakistan",     tempMean: 26.5, tempAmp: 5.5, hemisphere: "N", gridCI: 430, renewablePct: 15, waterStress: 4.4, distanceM: 120, noiseLimit: 55, priceKwh: 0.14, priceWaterM3: 0.6 },
-    mumbai:    { name: "Mumbai, India",         tempMean: 27.5, tempAmp: 2.5, hemisphere: "N", gridCI: 710, renewablePct: 12, waterStress: 3.9, distanceM: 120, noiseLimit: 55, priceKwh: 0.11, priceWaterM3: 0.5 },
-    sydney:    { name: "Sydney, Australia",     tempMean: 18.5, tempAmp: 5.0, hemisphere: "S", gridCI: 620, renewablePct: 30, waterStress: 2.5, distanceM: 300, noiseLimit: 50, priceKwh: 0.18, priceWaterM3: 2.4 },
+    stockholm: { name: "Stockholm, Sweden",     tempMean: 7.5,  tempAmp: 9.5, hemisphere: "N", gridCI: 40,  renewablePct: 70, gridRenewablePct: 68, waterStress: 0.6, distanceM: 600, noiseLimit: 45, priceKwh: 0.09, priceWaterM3: 2.6 },
+    dublin:    { name: "Dublin, Ireland",       tempMean: 10.0, tempAmp: 5.0, hemisphere: "N", gridCI: 290, renewablePct: 40, gridRenewablePct: 40, waterStress: 1.2, distanceM: 350, noiseLimit: 45, priceKwh: 0.22, priceWaterM3: 2.2 },
+    virginia:  { name: "Ashburn, Virginia, US", tempMean: 13.5, tempAmp: 11.5, hemisphere: "N", gridCI: 370, renewablePct: 25, gridRenewablePct: 12, waterStress: 2.1, distanceM: 250, noiseLimit: 50, priceKwh: 0.08, priceWaterM3: 1.6 },
+    phoenix:   { name: "Phoenix, Arizona, US",  tempMean: 24.0, tempAmp: 10.0, hemisphere: "N", gridCI: 380, renewablePct: 20, gridRenewablePct: 15, waterStress: 4.6, distanceM: 400, noiseLimit: 50, priceKwh: 0.10, priceWaterM3: 1.9 },
+    singapore: { name: "Singapore",             tempMean: 27.8, tempAmp: 1.0, hemisphere: "N", gridCI: 410, renewablePct: 5, gridRenewablePct: 4,  waterStress: 2.8, distanceM: 150, noiseLimit: 55, priceKwh: 0.21, priceWaterM3: 2.0 },
+    karachi:   { name: "Karachi, Pakistan",     tempMean: 26.5, tempAmp: 5.5, hemisphere: "N", gridCI: 430, renewablePct: 15, gridRenewablePct: 30, waterStress: 4.4, distanceM: 120, noiseLimit: 55, priceKwh: 0.14, priceWaterM3: 0.6 },
+    mumbai:    { name: "Mumbai, India",         tempMean: 27.5, tempAmp: 2.5, hemisphere: "N", gridCI: 710, renewablePct: 12, gridRenewablePct: 22, waterStress: 3.9, distanceM: 120, noiseLimit: 55, priceKwh: 0.11, priceWaterM3: 0.5 },
+    sydney:    { name: "Sydney, Australia",     tempMean: 18.5, tempAmp: 5.0, hemisphere: "S", gridCI: 620, renewablePct: 30, gridRenewablePct: 35, waterStress: 2.5, distanceM: 300, noiseLimit: 50, priceKwh: 0.18, priceWaterM3: 2.4 },
   };
 
   // Cooling architectures used by the simulator.
@@ -75,7 +79,7 @@
     liquid:      { name: "Direct-to-chip liquid cooling",          copFactor: 1.60, waterBase: 0.25, waterSlope: 0.030, fcOffset: 8,  lwUnit: 90 },
   };
 
-  const CARBON_PRICE_PER_T = 85; // USD per tonne CO2e, used to value carbon savings
+  const CARBON_PRICE_PER_T = 85; // default USD per tonne CO2e (editable per facility), used to value carbon
 
   /* ---------------------------------------------------------- *
    * 2. Small numeric helpers
@@ -323,7 +327,7 @@
 
     const noiseValues = hasNoise ? daily.map((d) => d.noise) : [];
     const noiseP95 = hasNoise ? quantile(noiseValues, 0.95) : NaN;
-    const waterEnergyFactor = p.waterEnergyFactor != null ? p.waterEnergyFactor : 1.8; // L per kWh at the power plant
+    const waterEnergyFactor = p.waterEnergyFactor != null ? p.waterEnergyFactor : ASSUMPTIONS.waterEnergyFactor; // L per kWh at the power plant
 
     const k = {
       days,
@@ -344,6 +348,8 @@
       wueSource: (T.water + waterEnergyFactor * T.total) / T.it, // incl. water at the power plant
       waterStressWeightedM3: (T.water / 1000) * (1 + (p.waterStress || 0) / 5),
       clf: T.cooling / T.it,
+      plf: T.other / T.it,                                      // Power Load Factor (Green Grid)
+      erf: ren,                                                 // Renewable Energy Factor (ISO/IEC 30134-3)
       cer: T.cooling > 0 ? T.it / T.cooling : NaN,
       coolingShare: (T.cooling / T.total) * 100,
       pPUEcooling: (T.it + T.cooling) / T.it,
@@ -363,7 +369,8 @@
       noiseExceedDays: hasNoise ? noiseValues.filter((v) => v > p.noiseLimit).length : NaN,
       energyCost: T.total * (p.priceKwh || 0),
       waterCost: (T.water / 1000) * (p.priceWaterM3 || 0),
-      carbonCost: (T.co2Mkt / 1000) * CARBON_PRICE_PER_T,
+      carbonPrice: p.carbonPrice != null ? p.carbonPrice : CARBON_PRICE_PER_T,
+      carbonCost: (T.co2Mkt / 1000) * (p.carbonPrice != null ? p.carbonPrice : CARBON_PRICE_PER_T),
       annualise,
       hasTemp, hasUtil, hasNoise,
     };
@@ -412,7 +419,7 @@
       sub("Grid carbon intensity", p.gridCI, B.gridCI, 1, 0),
       sub("Water stress", p.waterStress, B.waterStress, 1, 1),
       sub("Free-cooling climate", k.freeCoolingDaysPct, B.freeCooling, 1, 1),
-      sub("Renewable availability", p.renewablePct, B.renewables, 1, 0),
+      sub("Grid renewable share", p.gridRenewablePct != null ? p.gridRenewablePct : p.renewablePct, B.renewables, 1, 0),
       sub("Distance to receivers", p.distanceM, B.distance, 1, 0),
     ];
     const dims = {
@@ -522,8 +529,19 @@
    * 10. What-if simulator
    * ---------------------------------------------------------- */
 
+  // Simulator coefficients. These are modelling assumptions, not measured values;
+  // they are listed on the Methodology page and can be changed here.
+  const ASSUMPTIONS = {
+    coolingSavingPerDegC: 0.04,   // fraction of cooling energy saved per °C setpoint rise
+    waterSavingPerDegC: 0.02,     // fraction of water saved per °C setpoint rise
+    economiserFloorCLF: 0.07,     // fan/pump energy that remains when the economiser carries the load
+    waterReusePenalty: 0.075,     // extra cooling energy at 100 % water reuse (less evaporative cooling)
+    waterEnergyFactor: 1.8,       // L of water consumed per kWh generated (EWIF, US average)
+    carTonnesPerYear: 4.6,        // tCO2e emitted by a typical passenger car per year (US EPA)
+  };
+
   const DEFAULT_LEVERS = {
-    setpointDelta: 0,      // °C raise of supply-air temperature (ASHRAE A1 allows up to 27 °C)
+    setpointDelta: 0,      // °C raise of supply-air temperature (ASHRAE recommended inlet range 18-27 °C)
     economiserBoost: 0,    // % of remaining cooling removed on economiser-eligible days
     itReduction: 0,        // % IT energy saved by virtualisation / consolidation
     lossReduction: 0,      // % of power-distribution and lighting losses removed (UPS, LED)
@@ -540,15 +558,15 @@
       const scale = it / r.it_kwh;              // heat to remove scales with IT energy
       let cooling = r.cooling_kwh * scale;
       // ≈4 % cooling energy saved per °C setpoint increase (rule of thumb 2–5 %).
-      cooling *= Math.max(0, 1 - 0.04 * L.setpointDelta);
+      cooling *= Math.max(0, 1 - ASSUMPTIONS.coolingSavingPerDegC * L.setpointDelta);
       if (isFinite(r.temp_c) && r.temp_c < fcThreshold && L.economiserBoost > 0) {
-        const floor = it * 0.07;
+        const floor = it * ASSUMPTIONS.economiserFloorCLF;
         cooling = Math.max(floor, cooling - (L.economiserBoost / 100) * Math.max(0, cooling - floor));
       }
       // Moving away from evaporative cooling costs some extra fan/chiller energy.
-      cooling *= 1 + 0.15 * (L.waterReuse / 100) * 0.5;
+      cooling *= 1 + ASSUMPTIONS.waterReusePenalty * (L.waterReuse / 100);
       const other = r.other_kwh * scale * (1 - L.lossReduction / 100);
-      const water = r.water_l * scale * Math.max(0, 1 - 0.02 * L.setpointDelta) * (1 - L.waterReuse / 100);
+      const water = r.water_l * scale * Math.max(0, 1 - ASSUMPTIONS.waterSavingPerDegC * L.setpointDelta) * (1 - L.waterReuse / 100);
       return Object.assign({}, r, {
         it_kwh: it, cooling_kwh: cooling, other_kwh: other, water_l: water,
         noise_dba: isFinite(r.noise_dba) ? r.noise_dba - L.noiseMitigation : r.noise_dba,
@@ -592,7 +610,7 @@
       const c = compareScenario(rows, profile, levers, weights);
       recs.push({ dimension: dim, title, why, levers, effort, delta: c.delta });
     };
-    if (k.pue > 1.25) add("cooling", "Raise the supply-air setpoint by 2 °C", `Annual PUE is ${k.pue.toFixed(2)}. ASHRAE A1 allows supply air up to 27 °C; each degree typically cuts cooling energy by 2–5 %.`, { setpointDelta: 2 }, "Low");
+    if (k.pue > 1.25) add("cooling", "Raise the supply-air setpoint by 2 °C", `Annual PUE is ${k.pue.toFixed(2)}. The ASHRAE recommended inlet range is 18–27 °C, so many halls can run warmer. The simulator assumes 4 % less cooling energy per °C.`, { setpointDelta: 2 }, "Low");
     if (k.hasTemp && k.freeCoolingDaysPct > 10 && (k.freeCoolingUtilisationPct < 70 || !isFinite(k.freeCoolingUtilisationPct)))
       add("cooling", "Use the economiser on more cool days", `${k.freeCoolingDaysPct.toFixed(0)} % of days are below the economiser threshold, but only ${isFinite(k.freeCoolingUtilisationPct) ? k.freeCoolingUtilisationPct.toFixed(0) : "0"} % of them run with near-zero mechanical cooling.`, { economiserBoost: 60 }, "Medium");
     if (!k.hasUtil || k.itUtil < 70) add("energy", "Consolidate and virtualise under-used servers", `Average IT utilisation is ${isFinite(k.itUtil) ? k.itUtil.toFixed(0) + " %" : "unknown"}. Idle servers still draw about half of peak power.`, { itReduction: 10 }, "Medium");
@@ -620,14 +638,61 @@
     const loc = LOCATIONS[key] || LOCATIONS.virginia;
     const cs = COOLING_SYSTEMS[coolingSystem] || COOLING_SYSTEMS.evaporative;
     return {
-      locationKey: key, name: loc.name, gridCI: loc.gridCI, renewablePct: loc.renewablePct,
+      locationKey: key, name: loc.name, gridCI: loc.gridCI, renewablePct: loc.renewablePct, gridRenewablePct: loc.gridRenewablePct,
+      carbonPrice: CARBON_PRICE_PER_T,
       waterStress: loc.waterStress, distanceM: loc.distanceM, noiseLimit: loc.noiseLimit,
       priceKwh: loc.priceKwh, priceWaterM3: loc.priceWaterM3,
       fcThreshold: 18 + cs.fcOffset, waterEnergyFactor: 1.8,
     };
   }
 
+  /* ---------------------------------------------------------- *
+   * 13. Verification: hand-calculated reference cases
+   * ---------------------------------------------------------- *
+   * Each case states inputs whose answer was worked out by hand. The
+   * website shows these live on the Methodology page; tests/ runs them
+   * in Node and Python.
+   */
+  function selfTest() {
+    const tol = (a, b, t) => Math.abs(a - b) <= (t || 1e-6) * Math.max(1, Math.abs(b));
+    const rows = [
+      { date: "2025-01-01", it_kwh: 1000, cooling_kwh: 300, other_kwh: 100, water_l: 1500, grid_ci: 400, temp_c: 10, it_util_pct: 50, noise_dba: 40 },
+      { date: "2025-01-02", it_kwh: 1000, cooling_kwh: 200, other_kwh: 100, water_l: 500, grid_ci: 500, temp_c: 20, it_util_pct: 70, noise_dba: 44 },
+    ];
+    const prof = { gridCI: 450, renewablePct: 25, gridRenewablePct: 25, waterStress: 2.5, distanceM: 525, noiseLimit: 50, priceKwh: 0.1, priceWaterM3: 2, fcThreshold: 18, waterEnergyFactor: 1.8, carbonPrice: 100 };
+    const k = computeMetrics(rows, prof).kpis;
+    const reg = linearRegression([0, 1, 2, 3, 4], [2, 5, 8, 11, 14]);
+    const robust = detectAnomalies([1, 2, 3, 4, 100], { method: "residual", threshold: 3.5, x: [0, 0, 0, 0, 0] });
+    const gs = greenScore({ energy: { score: 100 }, water: { score: 0 }, cooling: { score: 50 }, carbon: { score: 50 }, noise: { score: 50 }, location: { score: 50 } }, DEFAULT_WEIGHTS);
+    const cases = [
+      ["PUE", "(2000 + 500 + 200) ÷ 2000", k.pue, 1.35],
+      ["DCiE", "2000 ÷ 2700 × 100", k.dcie, 74.0740741],
+      ["PUE = 1 + CLF + PLF", "1 + 0.25 + 0.10", 1 + k.clf + k.plf, 1.35],
+      ["WUE (site)", "2000 L ÷ 2000 kWh", k.wue, 1.0],
+      ["WUE (source)", "(2000 + 1.8 × 2700) ÷ 2000", k.wueSource, 3.43],
+      ["Cooling Efficiency Ratio", "2000 ÷ 500", k.cer, 4.0],
+      ["Location-based CO₂ (t)", "(1400 × 400 + 1300 × 500) ÷ 10⁶", k.co2LocT, 1.21],
+      ["Market-based CO₂ (t)", "1.21 × (1 − 0.25)", k.co2MktT, 0.9075],
+      ["CUE", "907.5 kg ÷ 2000 kWh", k.cue, 0.45375],
+      ["Energy-weighted grid CI", "1 210 000 g ÷ 2700 kWh", k.avgGridCI, 448.148148],
+      ["Carbon cost", "0.9075 t × $100", k.carbonCost, 90.75],
+      ["Free-cooling days", "1 of 2 days below 18 °C", k.freeCoolingDaysPct, 50],
+      ["Linear score", "100 × (1.55 − 2.00) ÷ (1.10 − 2.00)", linearScore(1.55, 1.1, 2.0), 50],
+      ["Linear score is clamped", "PUE 2.4 is worse than the worst anchor", linearScore(2.4, 1.1, 2.0), 0],
+      ["Sound pressure at 100 m", "100 − 20·log₁₀(100) − 8", soundPressureAt(100, 100), 52],
+      ["Two equal sources", "10·log₁₀(2 × 10⁹)", combineLevels([90, 90]), 93.0103],
+      ["95th percentile", "P95 of 1…21", quantile(Array.from({ length: 21 }, (_, i) => i + 1), 0.95), 20],
+      ["OLS slope", "y = 2 + 3x", reg.slope, 3],
+      ["OLS intercept", "y = 2 + 3x", reg.intercept, 2],
+      ["OLS R²", "perfect line", reg.r2, 1],
+      ["Robust z (MAD)", "(100 − 3) ÷ (1.4826 × 1)", robust[4].score, 97 / 1.4826],
+      ["GreenScore", "(25×100 + 15×0 + 60×50) ÷ 100", gs.score, 55],
+    ];
+    return cases.map(([name, working, actual, expected]) => ({ name, working, actual, expected, pass: tol(actual, expected, 1e-4) }));
+  }
+
   return {
+    ASSUMPTIONS, selfTest,
     DIMENSIONS, DEFAULT_WEIGHTS, BENCHMARKS, GRADES, LOCATIONS, COOLING_SYSTEMS, DEFAULT_LEVERS,
     CARBON_PRICE_PER_T, REQUIRED_COLUMNS, OPTIONAL_COLUMNS,
     generateDataset, parseCSV, toCSV, computeMetrics, scoreDimensions, greenScore, gradeFor,

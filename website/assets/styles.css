@@ -125,6 +125,7 @@ button, input, select { font: inherit; color: inherit; }
 .topbar .spacer { flex: 1; }
 .chip-score { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); font-family: var(--f-mono); font-size: 0.85rem; }
 .chip-score b { font-size: 1rem; }
+.save-tag { font-size: 0.75rem; color: var(--muted); }
 .source-tag { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink-2); }
 
 .content {

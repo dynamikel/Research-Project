@@ -34,6 +34,30 @@ GreenDC assesses data centre sustainability across six dimensions (energy, water
 
 Every dimension page shows a **worked calculation**: the formula, then the same formula with your data substituted.
 
+## Saving your work
+
+- **Automatic:** the current dataset, facility parameters, weights and simulator settings are saved in your browser and come back when you reopen the site.
+- **Saved projects:** on the Data page, name an analysis and choose *Save project* to keep several scenarios side by side, then *Open* any of them later.
+- **Project files:** *Export project file* downloads a `.json` file with the full dataset and settings. *Import project file* opens it on any computer, which is the way to share an analysis or back it up.
+
+Browser storage belongs to one browser on one device. Use project files to move work between devices.
+
+## Verification
+
+Every formula is checked against hand-calculated cases:
+
+```bash
+node tests/engine.test.js
+```
+
+```bash
+python3 tests/test_greendc.py
+```
+
+The Node suite runs 22 hand-worked cases (PUE, DCiE, WUE, CUE, ERF, Scope 2, acoustics, OLS regression, robust z-score, GreenScore) plus identity checks on the sample data. Examples are PUE = 1 + CLF + PLF and CUE = PUE × grid intensity × (1 − RE). It also checks that contracted renewables are not double counted in the location score. The Python suite repeats the hand cases and confirms the Python and JavaScript results agree to 1e-9. The same hand cases run live on the website's Methodology page.
+
+The Methodology page also separates **standardised indicators** (ISO/IEC 30134, The Green Grid, GHG Protocol) from **GreenDC-defined constructs** (scores, GreenScore, free-cooling utilisation, noise margin). It lists every modelling assumption, and covers limitations and references.
+
 ## Running it
 
 The site is static, so no build step is needed. Charts and fonts load from public CDNs.
