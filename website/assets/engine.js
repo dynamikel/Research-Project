@@ -570,6 +570,8 @@
       return Object.assign({}, r, {
         it_kwh: it, cooling_kwh: cooling, other_kwh: other, water_l: water,
         noise_dba: isFinite(r.noise_dba) ? r.noise_dba - L.noiseMitigation : r.noise_dba,
+        // Consolidation runs the same work on fewer servers, so utilisation rises: u' = u ÷ (1 − r)
+        it_util_pct: isFinite(r.it_util_pct) ? Math.min(100, r.it_util_pct / (1 - L.itReduction / 100)) : r.it_util_pct,
       });
     });
     const newProfile = Object.assign({}, profile, {

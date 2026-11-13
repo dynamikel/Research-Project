@@ -13,6 +13,7 @@ GreenDC assesses data centre sustainability across six dimensions (energy, water
 | `website/assets/app.js` | User interface, charts and page routing |
 | `website/assets/styles.css` | Styles (light and dark themes, responsive) |
 | `python/greendc.py` | Python reference implementation (standard library only) |
+| `data/scenarios/greendc-best-case.json` | Best-case project (ideal Nordic site, every simulator lever at maximum, GreenScore 99.2). Open it with *Import project file* |
 | `data/sample_dataset.csv` | One simulated year (Ashburn, Virginia, 2 MW, evaporative cooling) with injected faults |
 
 ## Website pages

@@ -33,6 +33,10 @@ check("contracted renewables do not change the location score", () => {
   close(b.scores.location.score, a.scores.location.score);
   assert.ok(b.scores.carbon.score > a.scores.carbon.score);
 });
+check("consolidation raises utilisation: u / (1 - r)", () => {
+  const sc = G.applyScenario(rows, prof, { itReduction: 20 });
+  close(sc.rows[0].it_util_pct, Math.min(100, rows[0].it_util_pct / 0.8));
+});
 check("empty scenario changes nothing", () => close(G.compareScenario(rows, prof, {}).delta.energyMWh, 0));
 check("100 % renewables gives zero market-based emissions", () => close(G.analyse(rows, Object.assign({}, prof, { renewablePct: 100 })).metrics.kpis.co2MktT, 0));
 check("weather-adjusted detector finds the injected PUE faults", () => {

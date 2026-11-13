@@ -1,0 +1,51 @@
+{
+ "app": "GreenDC",
+ "version": 1,
+ "savedAt": "2026-11-13T14:54:28.562Z",
+ "name": "GreenDC best case · ideal Nordic site",
+ "source": "Simulated",
+ "gen": {
+  "location": "stockholm",
+  "coolingSystem": "aircooled",
+  "itCapacityMW": 2,
+  "economiserAdoption": 1,
+  "days": 365,
+  "seed": 42,
+  "injectAnomalies": false
+ },
+ "rows": null,
+ "profile": {
+  "locationKey": "stockholm",
+  "name": "GreenDC best case · ideal Nordic site",
+  "gridCI": 20,
+  "renewablePct": 70,
+  "gridRenewablePct": 100,
+  "carbonPrice": 85,
+  "waterStress": 0,
+  "distanceM": 1500,
+  "noiseLimit": 45,
+  "priceKwh": 0.09,
+  "priceWaterM3": 2.6,
+  "fcThreshold": 18,
+  "waterEnergyFactor": 1.8
+ },
+ "weights": {
+  "energy": 25,
+  "water": 15,
+  "cooling": 15,
+  "carbon": 25,
+  "noise": 10,
+  "location": 10
+ },
+ "levers": {
+  "setpointDelta": 6,
+  "economiserBoost": 100,
+  "itReduction": 30,
+  "lossReduction": 60,
+  "renewablePct": 100,
+  "waterReuse": 90,
+  "noiseMitigation": 15
+ },
+ "greenScore": 93.0514266014701,
+ "days": 365
+}
