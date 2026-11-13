@@ -39,7 +39,7 @@
     cue:        { best: 0.0,  worst: 0.70, unit: "kgCO₂e/kWh", note: "CUE of a coal-heavy grid at PUE 1.6 ≈ 1.3" },
     noiseMargin:{ best: 10,   worst: -10,  unit: "dB",      note: "Margin = local limit − 95th-percentile level at the nearest receiver" },
     gridCI:     { best: 50,   worst: 800,  unit: "gCO₂e/kWh", note: "Nordic hydro ≈ 30–50, coal-heavy grids ≈ 700–900" },
-    waterStress:{ best: 0,    worst: 5,    unit: "0–5",     note: "WRI Aqueduct baseline water stress scale" },
+    waterStress:{ best: 0,    worst: 5,    unit: "/ 5",     note: "WRI Aqueduct baseline water stress scale" },
     freeCooling:{ best: 100,  worst: 0,    unit: "% days",  note: "Share of days below the economiser threshold" },
     renewables: { best: 100,  worst: 0,    unit: "%",       note: "Renewable share of the regional grid" },
     distance:   { best: 1000, worst: 50,   unit: "m",       note: "Distance to the nearest noise-sensitive receiver" },

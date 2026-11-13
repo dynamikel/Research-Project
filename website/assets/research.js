@@ -111,7 +111,7 @@
         { label: "Water", data: res.map((r) => r.scores.water.score), backgroundColor: css("--c-water"), borderRadius: 4, maxBarThickness: 22 },
         { label: "Carbon", data: res.map((r) => r.scores.carbon.score), backgroundColor: css("--c-carbon"), borderRadius: 4, maxBarThickness: 22 },
       ] },
-      options: chartBase({ y: { min: 0, max: 100 }, tooltip: { label: (c) => `${c.dataset.label}: ${isFinite(c.parsed.y) ? fmt(c.parsed.y, 1) : "no data"}` } }),
+      options: chartBase({ x: { ticks: { autoSkip: false, maxRotation: 45, color: css("--muted") } }, y: { min: 0, max: 100 }, tooltip: { label: (c) => `${c.dataset.label}: ${isFinite(c.parsed.y) ? fmt(c.parsed.y, 1) : "no data"}` } }),
     });
     $("#cases-legend").innerHTML = legend([["Energy", css("--c-energy")], ["Water", css("--c-water")], ["Carbon", css("--c-carbon")]]);
 
@@ -170,7 +170,7 @@
         { type: "bar", label: "5th–95th percentile", data: items.map((i) => [i.p5, i.p95]), backgroundColor: css("--accent") + "55", borderColor: css("--accent"), borderWidth: 1, borderRadius: 4, maxBarThickness: 30, order: 2 },
         { type: "line", label: "Default weights", data: items.map((i) => i.base), showLine: false, pointRadius: 6, pointStyle: "rectRot", pointBackgroundColor: css("--ink"), pointBorderColor: css("--surface"), pointBorderWidth: 2, order: 1 },
       ] },
-      options: chartBase({ y: { min: 0, max: 100 }, tooltip: { label: (c) => (Array.isArray(c.raw) ? `90 % of draws: ${fmt(c.raw[0], 1)} – ${fmt(c.raw[1], 1)}` : `Default weights: ${fmt(c.parsed.y, 1)}`) } }),
+      options: chartBase({ x: { ticks: { autoSkip: false, maxRotation: 45, color: css("--muted") } }, y: { min: 0, max: 100 }, tooltip: { label: (c) => (Array.isArray(c.raw) ? `90 % of draws: ${fmt(c.raw[0], 1)} – ${fmt(c.raw[1], 1)}` : `Default weights: ${fmt(c.parsed.y, 1)}`) } }),
     });
     $("#sens-mc-legend").innerHTML = legend([["5th–95th percentile across weight draws", css("--accent")], ["Default weights", css("--ink")]]);
   }
@@ -319,13 +319,49 @@
   }
 
   /* ---------------------------------------------------------- *
+   * Overview: research highlights (cheap values now, the rest after warm-up)
+   * ---------------------------------------------------------- */
+  function renderHighlights() {
+    const el = $("#ov-highlights");
+    if (!el) return;
+    const pub = publicResults();
+    const meta = pub.find((p) => p.c.id === "meta"), ind = pub.find((p) => p.c.id === "industry");
+    const tests = G.selfTest();
+    const b = cache["bench-3.5"], mc = cache["mc-uniform"], path = cache.ashburn;
+    const card = (href, value, label, note) => `<a class="hl" href="#${href}"><b>${value}</b><span>${label}</span><small>${note}</small></a>`;
+    el.innerHTML = [
+      card("cases", `${fmt(meta.green.score, 0)} vs ${fmt(ind.green.score, 0)}`, "Published data", "Meta's fleet against an industry-average facility (partial GreenScore)"),
+      card("evaluation", b ? `F1 ${fmt(b.table.pue.residual.f1, 2)}` : "…", "Weather-adjusted detection", b ? `against ${fmt(b.table.pue.rolling.f1, 2)} for a rolling z-score, ${b.datasets} simulated years` : "calculating the benchmark"),
+      card("sensitivity", mc ? `ρ ${fmt(mc.meanSpearman, 2)}` : "…", "Robust to weights", mc ? `mean rank correlation over ${fmt0(mc.draws)} random weightings` : "calculating"),
+      card("cases", path ? `${path[0].grade} → ${path[path.length - 1].grade}` : "…", "Ashburn what-if", path ? `${fmt(path[0].score, 1)} → ${fmt(path[path.length - 1].score, 1)} in four steps` : "calculating"),
+      card("methodology", `${tests.filter((t) => t.pass).length}/${tests.length}`, "Verification checks", "hand calculations pass live; Python and JavaScript agree"),
+    ].join("");
+  }
+  const baseOverview = A.RENDER.overview;
+  A.RENDER.overview = function () { baseOverview(); renderHighlights(); };
+
+  /* ---------------------------------------------------------- *
    * Register
    * ---------------------------------------------------------- */
   A.RENDER.cases = renderCases;
   A.RENDER.sensitivity = renderSensitivity;
   A.RENDER.evaluation = renderEvaluation;
   A.RENDER.present = renderPresent;
+  // Compute the slower research results in the background after load, one at a
+  // time, so the Evaluation and Presentation pages open instantly.
+  function warmUp() {
+    const jobs = [ashburnPath, karachiCase, bestCase, locationItems, () => mcResult("uniform"), () => bench(3.5), () => once("sweep-pue", () => Object.keys(G.DETECTION_METHODS).map((m) => G.detectionSweep("pue", m)))];
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+    const next = () => {
+      const job = jobs.shift();
+      if (!job) { if (A.state.page === "overview") renderHighlights(); return; }
+      try { job(); } catch (e) { /* ignore */ }
+      idle(next);
+    };
+    idle(next);
+  }
   function setup() {
+    setTimeout(warmUp, 600);
     setupSUS();
     setupPresent();
     $("#sens-mode").addEventListener("change", renderSensitivity);

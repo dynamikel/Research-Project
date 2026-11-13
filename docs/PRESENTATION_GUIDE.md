@@ -15,6 +15,8 @@ All numbers below come from the website with its default settings: the Ashburn, 
 - [ ] Optional: run 3–5 people through the usability study (Evaluation page) so you can report a real SUS score. Export the CSV afterwards.
 - [ ] Optional: import the three scenario files in `data/scenarios/` and save them as projects, so you can switch between them with one click.
 
+The **▶ Present** button at the top right of every page opens Presentation mode. On the Overview page, the Research highlights strip gives a one-glance summary of the evidence.
+
 Keyboard in Presentation mode: → or Space for the next slide, ← for the previous one, Home for the first. **Full screen** fills the projector, and each slide has an **Open the live page** link.
 
 ---

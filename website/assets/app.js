@@ -106,7 +106,7 @@
       <path d="${arc(start, start + sweep)}" fill="none" stroke="var(--grid)" stroke-width="14" stroke-linecap="round"/>
       ${v > 0.5 ? `<path d="${arc(start, start + (sweep * v) / 100)}" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round"/>` : ""}
       ${ticks}
-      <text class="g-num" x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="46" font-weight="500" fill="var(--ink)">${fmt(score, 0)}</text>
+      <text class="g-num" x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="40" font-weight="500" fill="var(--ink)">${fmt(score, 1)}</text>
       <text x="${cx}" y="${cy + 30}" text-anchor="middle" font-size="13" fill="var(--ink-2)" font-family="IBM Plex Sans, sans-serif">Grade ${grade.grade} · ${grade.label}</text>
       <text x="${cx}" y="${cy + 74}" text-anchor="middle" font-size="11" letter-spacing="1.5" fill="var(--muted)" font-family="IBM Plex Sans, sans-serif">GREENSCORE</text>`;
   }
@@ -183,7 +183,7 @@
     $("#tb-name").textContent = state.profile.name;
     $("#tb-period").textContent = `${k.period} · ${k.days} days · ${fmt(k.avgITkW / 1000, 2)} MW average IT load`;
     $("#tb-source").textContent = state.source;
-    $("#tb-score").textContent = fmt(r.green.score, 0);
+    $("#tb-score").textContent = fmt(r.green.score, 1);
     $("#tb-grade").textContent = r.green.grade.grade;
     G.DIMENSIONS.forEach((d) => { const el = $(`[data-pill="${d.key}"]`); if (el) el.textContent = fmt(r.scores[d.key].score, 0); });
   }
@@ -196,6 +196,9 @@
     state.page = page;
     $$("[data-page]").forEach((s) => { s.hidden = s.dataset.page !== page; });
     $$("#nav a").forEach((a) => a.setAttribute("aria-current", a.getAttribute("href") === "#" + page ? "page" : "false"));
+    const link = $(`#nav a[href="#${page}"]`);
+    document.title = page === "overview" || !link ? "GreenDC" : `${link.textContent.replace(/\d+|–/g, "").trim()} · GreenDC`;
+    document.body.classList.remove("nav-open");
     renderPage(page);
     window.scrollTo(0, 0);
   }
@@ -761,7 +764,7 @@
     draw("lo-compare", {
       type: "bar",
       data: { labels: comp.map((c) => c.name.split(",")[0]), datasets: [{ label: "GreenScore", data: comp.map((c) => c.gs), backgroundColor: comp.map((c) => (c.loc === p.locationKey ? css("--c-location") : css("--c-location") + "88")), borderRadius: 4, maxBarThickness: 34 }] },
-      options: chartBase({ y: { min: 0, max: 100 }, tooltip: { label: (c) => `GreenScore: ${fmt(c.parsed.y, 1)}` } }),
+      options: chartBase({ x: { ticks: { autoSkip: false, maxRotation: 45, color: css("--muted"), font: { family: "IBM Plex Mono, ui-monospace, monospace", size: 11 } } }, y: { min: 0, max: 100 }, tooltip: { label: (c) => `GreenScore: ${fmt(c.parsed.y, 1)}` } }),
     });
   }
 
@@ -955,6 +958,8 @@
     LEVERS.forEach((l) => { $("#l-" + l.key).value = state.levers[l.key]; $("#lo-" + l.key).textContent = `${l.key === "setpointDelta" ? "+" : ""}${state.levers[l.key]} ${l.unit}`; });
     const c = G.compareScenario(state.rows, state.profile, state.levers, state.weights);
     const D = c.delta, kb = c.base.metrics.kpis, ks = c.scen.metrics.kpis;
+    const untouched = LEVERS.every((l) => l.key === "renewablePct" ? state.levers.renewablePct === state.profile.renewablePct : !state.levers[l.key]);
+    $("#sim-hint").hidden = !untouched;
     $("#sim-kpis").innerHTML = [
       kpi("Energy saved", signed(D.energyMWh, 0), "MWh/yr"),
       kpi("Emissions avoided", signed(D.co2T, 0), "tCO₂e/yr"),
@@ -970,7 +975,7 @@
         { label: "Baseline", data: G.DIMENSIONS.map((d) => c.base.scores[d.key].score), backgroundColor: css("--c-other"), borderRadius: 4, maxBarThickness: 20 },
         { label: "Scenario", data: G.DIMENSIONS.map((d) => c.scen.scores[d.key].score), backgroundColor: css("--accent"), borderRadius: 4, maxBarThickness: 20 },
       ] },
-      options: chartBase({ y: { min: 0, max: 100 }, tooltip: { label: (x) => `${x.dataset.label}: ${fmt(x.parsed.y, 1)}` } }),
+      options: chartBase({ x: { ticks: { autoSkip: false, maxRotation: 45, color: css("--muted"), font: { family: "IBM Plex Mono, ui-monospace, monospace", size: 11 } } }, y: { min: 0, max: 100 }, tooltip: { label: (x) => `${x.dataset.label}: ${fmt(x.parsed.y, 1)}` } }),
     });
     const rows = [
       ["Facility energy (MWh)", kb.totalMWh, ks.totalMWh, 0, true],
@@ -998,18 +1003,20 @@
    *  RECOMMENDATIONS
    * ====================================================== */
   let recCache = null;
+  const REC_SORT = { greenScore: "GreenScore gain", energyMWh: "Energy saved", co2T: "Emissions avoided", waterM3: "Water saved", totalCost: "Cost saved" };
   function renderRecommendations() {
-    const recs = G.recommendations(state.rows, state.profile, state.weights);
+    const key = $("#rec-sort").value;
+    const recs = G.recommendations(state.rows, state.profile, state.weights).sort((a, b) => (b.delta ? b.delta[key] : -Infinity) - (a.delta ? a.delta[key] : -Infinity));
     recCache = recs;
     $("#recs").innerHTML = recs.length ? recs.map((r, i) => `<div class="rec">
         <div>
           <h3><span class="dim-tag" style="background:var(${DIM_COLOR[r.dimension]})">${r.dimension}</span>${esc(r.title)}</h3>
           <p>${esc(r.why)}</p>
           ${r.delta ? `<div class="savings">
-            <span>Energy <b>${signed(r.delta.energyMWh, 0)} MWh/yr</b></span>
-            <span>CO₂e <b>${signed(r.delta.co2T, 0)} t/yr</b></span>
-            <span>Water <b>${signed(r.delta.waterM3, 0)} m³/yr</b></span>
-            <span>Cost <b>${r.delta.totalCost < 0 ? "−" : ""}$${fmt0(Math.abs(r.delta.totalCost))}/yr</b></span>
+            <span>Energy saved <b>${signed(r.delta.energyMWh, 0)} MWh/yr</b></span>
+            <span>CO₂e avoided <b>${signed(r.delta.co2T, 0)} t/yr</b></span>
+            <span>Water saved <b>${signed(r.delta.waterM3, 0)} m³/yr</b></span>
+            <span>Cost saved <b>${money(r.delta.totalCost)}/yr</b></span>
             <span>Effort <b>${r.effort}</b></span>
           </div>` : `<div class="savings"><span>Effort <b>${r.effort}</b></span></div>`}
         </div>
@@ -1019,6 +1026,7 @@
       </div>`).join("") : `<p>All indicators are within good-practice ranges. Use the simulator to test further improvements.</p>`;
   }
   function setupRecommendations() {
+    $("#rec-sort").addEventListener("change", renderRecommendations);
     $("#recs").addEventListener("click", (e) => {
       const i = e.target.dataset && e.target.dataset.rec;
       if (i === undefined || !recCache) return;
@@ -1097,6 +1105,10 @@
     $("#fc-form").addEventListener("input", renderForecast);
     $("#fc-form").addEventListener("change", renderForecast);
     setupProjects();
+    $("#nav-toggle").addEventListener("click", () => {
+      const open = document.body.classList.toggle("nav-open");
+      $("#nav-toggle").setAttribute("aria-expanded", open ? "true" : "false");
+    });
     const saved = store.get(STORE_KEY);
     let restored = false;
     if (saved) { try { applySnapshot(saved); restored = true; } catch (e) { restored = false; } }

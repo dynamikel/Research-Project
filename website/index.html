@@ -22,6 +22,7 @@
       </svg>
       <div><div class="brand-name">GreenDC</div><div class="brand-sub">Sustainability framework</div></div>
     </div>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <nav class="nav" id="nav">
       <div class="nav-group">
         <div class="nav-label">Framework</div>
@@ -51,7 +52,7 @@
         <a href="#sensitivity">Sensitivity analysis</a>
         <a href="#evaluation">Evaluation</a>
         <a href="#methodology">Methodology</a>
-        <a href="#present">Presentation mode</a>
+        <a href="#present" class="nav-present">▶ Presentation mode</a>
       </div>
     </nav>
     <div class="rail-foot">Research prototype · free &amp; open<br>All calculations run in your browser.</div>
@@ -64,6 +65,7 @@
       <span class="save-tag" id="tb-saved" role="status">Saving…</span>
       <div class="spacer"></div>
       <span class="chip-score">GreenScore <b id="tb-score">–</b> <span id="tb-grade"></span></span>
+      <a class="btn small btn-present" href="#present">▶ Present</a>
     </header>
 
     <main class="content" id="content">
@@ -85,6 +87,11 @@
         </div>
 
         <div class="kpis" id="ov-kpis"></div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Research highlights</h2><p>Evidence behind the framework; select a card for the full analysis</p></div>
+          <div class="highlights" id="ov-highlights"></div>
+        </div>
 
         <div class="panel">
           <div class="panel-head"><h2>Six sustainability dimensions</h2><p>Each score is 0–100. Select a dimension to see its full calculation.</p></div>
@@ -319,6 +326,7 @@
           </div>
           <div class="panel">
             <h3>Annual savings</h3>
+            <p class="msg" id="sim-hint">No interventions are set yet. Choose a preset above or move a slider; savings and the new grade appear here.</p>
             <div class="kpis" id="sim-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
             <div class="chart"><canvas id="sim-chart" aria-label="Baseline and scenario dimension scores"></canvas></div>
             <div class="legend" id="sim-legend"></div>
@@ -336,6 +344,10 @@
           <div class="eyebrow">Decision support</div>
           <h1>Sustainability recommendations</h1>
           <p class="lede">Rules check each indicator against good practice. Every recommendation is then run through the simulator, so its savings and GreenScore gain come from your data. They are ranked by GreenScore gain.</p>
+        </div>
+        <div class="panel" style="flex-direction:row;flex-wrap:wrap;align-items:flex-end;gap:12px">
+          <div class="field" style="min-width:220px"><label for="rec-sort">Rank recommendations by</label><select id="rec-sort"><option value="greenScore">GreenScore gain</option><option value="energyMWh">Energy saved</option><option value="co2T">Emissions avoided</option><option value="waterM3">Water saved</option><option value="totalCost">Cost saved</option></select></div>
+          <p style="font-size:0.85rem;color:var(--ink-2);flex:1;min-width:240px">GreenScore rewards efficiency ratios such as PUE, so a measure that saves a lot of energy without changing PUE (server consolidation, for example) ranks lower by score than by energy. Cost savings include carbon valued at the facility carbon price.</p>
         </div>
         <div class="panel" id="recs"></div>
         <div class="panel">
