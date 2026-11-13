@@ -30,7 +30,7 @@ Keyboard in Presentation mode: → or Space for the next slide, ← for the prev
 | 3. Research question | 1:00 | Read the question. Name the three aims: standard indicators, one transparent score, measured recommendations. |
 | 4. The framework | 1:30 | Walk the five steps. Make the distinction clear: the indicators come from ISO/IEC 30134, The Green Grid and the GHG Protocol; the scores, the GreenScore, weather-adjusted detection and the simulator are your contribution. |
 | 5. Live assessment | 1:00 | Ashburn scores 62.5 (grade C). Carbon (47) and location (44) pull it down; energy (77) is good. |
-| 6. Published data | 1:30 | Leading operators score A or A+, while an industry-average facility on the world-average grid scores F. Mention coverage: public reports only support three of the six dimensions. |
+| 6. Google case | 2:00 | Walk the four steps: Google publishes 24 TWh, PUE 1.10, 6.1 billion gallons of water and 64 % carbon-free electricity. GreenDC derives WUE 1.06 L/kWh and CUE 0.156, scores them (energy 100, water 58, carbon 78) and combines them into 81.7 (grade A). Say it is partial: public reports cover 3 of 6 dimensions. Optionally switch to the live page and click **100 % carbon-free** to show 90.2 (A+). |
 | 7. Location matters | 1:00 | The same facility scores from about 35 (Mumbai) to 86 (Stockholm). Siting decides much of the footprint. |
 | 8. Anomaly detection | 1:30 | Across 40 simulated years, the weather-adjusted method has the best F1 on PUE (0.72 against 0.48 and 0.44). Removing the temperature effect stops hot days being flagged as faults. |
 | 9. What-if | 1:30 | Ashburn goes from C (62.5) to A (82.4) in four steps. Karachi reaches A only with liquid cooling plus upgrades. The upper bound of the scale is 99.2. |
@@ -48,8 +48,9 @@ Pick two or three of these; each takes about a minute.
 1. **Worked calculation:** go to **Energy** and point at "PUE = 18,144 ÷ 14,108 = 1.286". Every number on the site can be traced to its formula like this.
 2. **Change the location:** on **Data & facility**, choose Karachi and **Generate dataset**. The GreenScore drops to about 44 (E). Then go back to Ashburn.
 3. **Anomaly detection:** on **Anomaly detection**, PUE with the weather-adjusted method flags four days, all of them injected cooling faults (precision 100 %, recall 80 %). Switch to **IQR fences**: it finds none, because seasonal variation hides the faults.
-4. **Simulator:** on **What-if simulator**, click **Net-zero path** and watch the grade change. Or use the **Open** buttons on **Real-world cases** to load each step of the Ashburn path.
-5. **Verification:** on **Methodology**, scroll to Verification: 26 of 26 checks pass.
+4. **Simulator:** on **What-if simulator**, click **Net-zero path** and watch the grade change. Or use the **Open** buttons under Simulated case studies on the **Google case study** page to load each step of the Ashburn path.
+5. **Google case:** on **Google case study**, scroll through Steps 1–4, then click **100 % carbon-free** (81.7 → 90.2) and **Halve water use** (→ 86.6). Drag PUE to 1.56, the industry average, to show the score falling to 63.3 (C).
+6. **Verification:** on **Methodology**, scroll to Verification: 26 of 26 checks pass.
 
 ---
 
@@ -62,7 +63,7 @@ Energy and carbon are the most established and most material impacts, so they ca
 The anchors define 100 as leading practice (PUE 1.10, zero water, zero carbon), not as the average. That is deliberate: a sustainability score should show how far a facility is from best practice. Moving every anchor by ±10 % changes a score by only about ±3 points, so the conclusions are not sensitive to exact anchor values.
 
 **Your data is simulated. How do you know the framework works on real facilities?**
-Three answers. (1) The indicators follow published standards, and 26 hand-calculated checks confirm the code computes them correctly. (2) The Real-world cases page applies the framework to published figures from Google, Meta and Microsoft and an industry reference, and the results match their reputations. (3) Any facility can upload its own daily CSV. Using real sensor data is the main item of future work.
+Three answers. (1) The indicators follow published standards, and 26 hand-calculated checks confirm the code computes them correctly. (2) The Google case study applies the framework, step by step, to the figures Google published for 2023: 81.7 (grade A) on the three dimensions its report covers, with water as the weakest point. (3) Any facility can upload its own daily CSV. Using real sensor data is the main item of future work.
 
 **How realistic is the simulator?**
 It is physics-informed rather than calibrated: chiller efficiency falls as outdoor temperature rises, free cooling depends on temperature, server power follows a linear idle-to-peak model, and noise follows the fan laws. The resulting PUE values (about 1.25–1.45) fall in the range reported for modern facilities. Every coefficient that is assumed rather than measured is listed in the Methodology page's assumptions table.
@@ -99,7 +100,7 @@ If you ran the usability study, report the mean SUS score and the participant co
 | Ashburn C to A | 62.5 → 82.4 with 100 % renewables, 8 dB acoustic mitigation, 50 % water reuse, +2 °C setpoint |
 | Karachi | evaporative 43.5 (E) → liquid cooling with deep retrofit 87.3 (A) |
 | Upper bound | 99.2 (A+) |
-| Published cases | Meta 98.2, Microsoft 94.1 (40 % coverage), Google 81.7, industry average 25.3 |
+| Google case (2023) | WUE 1.06 L/kWh, CUE 0.156 kg/kWh; scores energy 100, water 58, carbon 78; partial GreenScore 81.7 (A); 100 % carbon-free → 90.2 (A+) |
 | Detection, PUE, 40 years | weather-adjusted F1 0.72; rolling z 0.48; IQR 0.44 |
 | PUE vs temperature | PUE = 1.206 + 0.006 × T, R² 0.83 |
 | Weight robustness | mean Spearman ρ 0.98 (any weighting), 0.999 (near default) |

@@ -48,7 +48,7 @@
       </div>
       <div class="nav-group">
         <div class="nav-label">Research</div>
-        <a href="#cases">Real-world cases</a>
+        <a href="#cases">Google case study</a>
         <a href="#sensitivity">Sensitivity analysis</a>
         <a href="#evaluation">Evaluation</a>
         <a href="#methodology">Methodology</a>
@@ -362,30 +362,79 @@
       </section>
 
 
-      <!-- ================= REAL-WORLD CASES ================= -->
+      <!-- ================= REAL-WORLD CASE: GOOGLE ================= -->
       <section class="page" data-page="cases">
         <div class="page-head">
-          <div class="eyebrow">Research · Validation with public data</div>
-          <h1>Real-world cases</h1>
-          <p class="lede">GreenDC applied to figures that operators have published, alongside prepared scenario case studies. Public sustainability reports give annual fleet totals, so only the energy, water and carbon dimensions can be scored; the coverage column shows the share of the GreenScore weight that each case supports.</p>
+          <div class="eyebrow">Research · Validation with published data</div>
+          <h1>Real-world case study: Google</h1>
+          <p class="lede">GreenDC applied, step by step, to the figures Google published for its data centres in 2023. The same four steps turn any operator's published numbers into a GreenScore.</p>
         </div>
+
+        <div class="panel">
+          <div class="steps">
+            <div><b>1</b><span>Published figures</span><small>What Google reports</small></div>
+            <div><b>2</b><span>Indicators</span><small>PUE, WUE, CUE</small></div>
+            <div><b>3</b><span>Scores</span><small>0–100 against benchmarks</small></div>
+            <div><b>4</b><span>GreenScore</span><small>weighted result and grade</small></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Step 1 · What Google publishes</h2><p>Google 2024 Environmental Report (2023 data)</p></div>
+          <div class="table-wrap"><table id="g-inputs"></table></div>
+          <p style="font-size:0.85rem;color:var(--ink-2);max-width:80ch">Google does not publish IT energy, water efficiency or carbon intensity directly. GreenDC calculates them from these totals in Step 2. The grid figure is not from Google: it is the US average, because most of Google's data centres are in the US.</p>
+        </div>
+
         <div class="split">
           <div class="panel">
-            <div class="panel-head"><h3>Published fleets scored by GreenDC</h3><div class="legend" id="cases-legend"></div></div>
-            <div class="chart"><canvas id="cases-chart" aria-label="Dimension scores of published cases"></canvas></div>
+            <div class="panel-head"><h2>Step 2 · Calculate the indicators</h2><p>Every number traced to its formula</p></div>
+            <div class="calc" id="g-calc"></div>
           </div>
-          <div class="panel"><h3>Derived values</h3><div class="calc" id="cases-calc"></div></div>
+          <div class="panel">
+            <div class="panel-head"><h2>Step 3 · Score each indicator</h2><p>100 = leading practice, 0 = poor</p></div>
+            <div class="calc" id="g-scores"></div>
+          </div>
         </div>
-        <div class="panel">
-          <div class="table-wrap"><table id="cases-table"></table></div>
-          <p style="font-size:0.8rem;color:var(--ink-2)">* Partial GreenScore over the dimensions with data (default weights renormalised). † Design value, not measured. ‡ Derived by GreenDC from reported electricity, water and PUE. Your facility row shows the same three-dimension score so it can be compared directly.</p>
+
+        <div class="split">
+          <div class="panel">
+            <div class="panel-head"><h2>Step 4 · Combine into the GreenScore</h2><div class="legend" id="g-legend"></div></div>
+            <div class="chart short"><canvas id="g-chart" aria-label="Google dimension scores"></canvas></div>
+            <div class="calc" id="g-gs"></div>
+          </div>
+          <div class="panel" style="align-items:center">
+            <svg class="gauge" id="g-gauge" viewBox="0 0 220 220" role="img" aria-label="Google partial GreenScore"></svg>
+            <p style="font-size:0.85rem;color:var(--ink-2);text-align:center;max-width:40ch" id="g-coverage"></p>
+          </div>
         </div>
+
         <div class="panel">
-          <h3>Sources and derivations</h3>
-          <div class="calc" id="cases-notes"></div>
+          <div class="panel-head"><h2>What if Google changed one thing?</h2><div class="btns"><button class="btn small" type="button" data-gwhat="cfe">100 % carbon-free</button><button class="btn small" type="button" data-gwhat="water">Halve water use</button><button class="btn small" type="button" data-gwhat="reset">Reset to 2023</button></div></div>
+          <div class="split">
+            <div id="g-levers"></div>
+            <div class="calc" id="g-whatif"></div>
+          </div>
         </div>
+
+        <div class="grid grid-2">
+          <div class="panel">
+            <h2>What the result shows</h2>
+            <div class="prose"><ul id="g-findings"></ul></div>
+          </div>
+          <div class="panel">
+            <h2>Limits of this case</h2>
+            <div class="prose"><ul>
+              <li>Public reports cover energy, water and carbon only, so this is a <b>partial</b> GreenScore over 65 % of the weight. Cooling, noise and location need site data Google does not publish.</li>
+              <li>The figures are fleet totals for the whole year, not one data centre.</li>
+              <li>"More than 24 TWh" is used as 24 TWh, so IT energy and WUE are approximate.</li>
+              <li>The 64 % is hourly carbon-free energy (it includes nuclear), used here in place of a renewable share.</li>
+              <li>Check every figure against the original report before quoting it.</li>
+            </ul></div>
+          </div>
+        </div>
+
         <div class="panel">
-          <div class="panel-head"><h2>Scenario case studies</h2><p>Simulated facilities with fixed settings (seed 42), so the results are reproducible</p></div>
+          <div class="panel-head"><h2>Simulated case studies</h2><p>Facilities generated by GreenDC's simulator (seed 42), not company data</p></div>
           <h3>Ashburn, Virginia: from grade C to grade A</h3>
           <div class="table-wrap"><table id="scn-ashburn"></table></div>
           <h3>Karachi, Pakistan: cooling technology and upgrades</h3>
@@ -666,7 +715,7 @@
                 <li>Shehabi, A. et al. (2016), <em>United States Data Center Energy Usage Report</em>, LBNL-1005775.</li>
                 <li>Uptime Institute (2024), <em>Global Data Center Survey</em>.</li>
                 <li>Our World in Data (2025), <em>Energy dataset</em> (Ember; Energy Institute Statistical Review), github.com/owid/energy-data.</li>
-                <li>Google (2024), <em>Environmental Report</em>; Meta (2024), <em>Sustainability Report</em>; Microsoft (2024), <em>Environmental Sustainability Report</em> and datacenter blog.</li>
+                <li>Google (2024), <em>Environmental Report</em> (2023 data), used for the Google case study.</li>
                 <li>Brooke, J. (1996), <em>SUS: A quick and dirty usability scale</em>; Bangor, A., Kortum, P. &amp; Miller, J. (2009), <em>Determining what individual SUS scores mean</em>, J. Usability Studies 4(3).</li>
                 <li>Marsaglia, G. &amp; Tsang, W. (2000), <em>A simple method for generating gamma variables</em>, ACM TOMS 26(3) (Dirichlet weight sampling).</li>
                 <li>Iglewicz, B. &amp; Hoaglin, D. (1993), <em>How to Detect and Handle Outliers</em> (modified z-score with MAD).</li>

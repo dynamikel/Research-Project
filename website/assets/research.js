@@ -90,31 +90,67 @@
   function publicResults() {
     return G.PUBLIC_CASES.map((c) => Object.assign({ c }, G.analyseAnnual(c, A.state.weights)));
   }
-  function renderCases() {
-    const res = publicResults();
-    const cur = A.state.result;
-    const cov = (r) => `${fmt0(r.coverage * 100)} %`;
-    $("#cases-table").innerHTML = `<thead><tr><th>Case</th><th>Year</th><th class="n">PUE</th><th class="n">WUE (L/kWh)</th><th class="n">CUE (kg/kWh)</th><th class="n">Energy</th><th class="n">Water</th><th class="n">Carbon</th><th class="n">GreenScore*</th><th>Grade</th><th class="n">Coverage</th></tr></thead>
-      <tbody>${res.map((r) => `<tr><td>${esc(r.c.name)}</td><td>${esc(r.c.year)}</td><td class="n">${fmt(r.kpis.pue, 2)}${r.c.pueIsDesign ? "†" : ""}</td><td class="n">${fmt(r.kpis.wue, 2)}${r.c.wue == null && isFinite(r.kpis.wue) ? "‡" : ""}</td><td class="n">${fmt(r.kpis.cue, 3)}</td><td class="n">${fmt(r.scores.energy.score, 0)}</td><td class="n">${fmt(r.scores.water.score, 0)}</td><td class="n">${fmt(r.scores.carbon.score, 0)}</td><td class="n"><b>${fmt(r.green.score, 1)}</b></td><td>${r.green.grade.grade}</td><td class="n">${cov(r)}</td></tr>`).join("")}
-      <tr><td><b>Your loaded facility</b> (${esc(A.state.profile.name)})</td><td>${esc(cur.metrics.kpis.period.slice(0, 4))}</td><td class="n">${fmt(cur.metrics.kpis.pue, 2)}</td><td class="n">${fmt(cur.metrics.kpis.wue, 2)}</td><td class="n">${fmt(cur.metrics.kpis.cue, 3)}</td><td class="n">${fmt(cur.scores.energy.score, 0)}</td><td class="n">${fmt(cur.scores.water.score, 0)}</td><td class="n">${fmt(cur.scores.carbon.score, 0)}</td><td class="n"><b>${fmt(G.greenScore({ energy: cur.scores.energy, water: cur.scores.water, carbon: cur.scores.carbon, cooling: { score: NaN }, noise: { score: NaN }, location: { score: NaN } }, A.state.weights).score, 1)}</b></td><td>–</td><td class="n">same 3 dims</td></tr></tbody>`;
-    $("#cases-notes").innerHTML = res.map((r) => `<div class="calc-row"><span class="c-name">${esc(r.c.name)} · ${esc(r.c.year)}</span><span style="font-size:0.85rem;color:var(--ink-2)">${esc(r.c.notes)}</span><span style="font-size:0.85rem">${esc(r.c.derived)}</span></div>`).join("");
-    const g = res.find((r) => r.c.id === "google");
-    $("#cases-calc").innerHTML =
-      calcRow("Google WUE (derived)", "WUE = water ÷ E_IT = water ÷ (E_total ÷ PUE)", `6.1 × 10⁹ gal × 3.785 L ÷ (24 × 10⁹ kWh ÷ 1.10) = <b>${fmt(g.kpis.wue, 3)} L/kWh</b>`) +
-      calcRow("Google CUE (estimated)", "CUE ≈ PUE × grid intensity × (1 − CFE)", `1.10 × 0.393 × (1 − 0.64) = <b>${fmt(g.kpis.cue, 3)} kg/kWh</b>`) +
-      calcRow("Industry reference CUE", "CUE = PUE × grid intensity", `1.56 × 0.471 = <b>${fmt(res[0].kpis.cue, 3)} kg/kWh</b>`) +
-      calcRow("Partial GreenScore", "GS = Σ wᵢSᵢ ÷ Σ wᵢ over the dimensions with data", `Energy (25) + Water (15) + Carbon (25) = 65 % of the default weight`);
-    draw("cases-chart", {
-      type: "bar",
-      data: { labels: res.map((r) => r.c.name.replace(" data centre fleet", "").replace(" datacenter fleet", "").replace(" (reference)", "")), datasets: [
-        { label: "Energy", data: res.map((r) => r.scores.energy.score), backgroundColor: css("--c-energy"), borderRadius: 4, maxBarThickness: 22 },
-        { label: "Water", data: res.map((r) => r.scores.water.score), backgroundColor: css("--c-water"), borderRadius: 4, maxBarThickness: 22 },
-        { label: "Carbon", data: res.map((r) => r.scores.carbon.score), backgroundColor: css("--c-carbon"), borderRadius: 4, maxBarThickness: 22 },
-      ] },
-      options: chartBase({ x: { ticks: { autoSkip: false, maxRotation: 45, color: css("--muted") } }, y: { min: 0, max: 100 }, tooltip: { label: (c) => `${c.dataset.label}: ${isFinite(c.parsed.y) ? fmt(c.parsed.y, 1) : "no data"}` } }),
-    });
-    $("#cases-legend").innerHTML = legend([["Energy", css("--c-energy")], ["Water", css("--c-water")], ["Carbon", css("--c-carbon")]]);
+  const googleResult = () => publicResults()[0];
 
+  // "What if" state for the Google case: PUE, WUE and carbon-free share.
+  const G0 = G.GOOGLE_2023;
+  const gBase = () => ({ pue: G0.pue, wue: G.analyseAnnual(G0).kpis.wue, cfe: G0.renewablePct });
+  let gw = null;
+  const G_LEVERS = [
+    { key: "pue", label: "PUE", min: 1.05, max: 1.6, step: 0.01, digits: 2, unit: "", help: "Industry average 1.56 (Uptime Institute 2024)" },
+    { key: "wue", label: "Water per IT kWh (WUE)", min: 0, max: 2.5, step: 0.01, digits: 2, unit: " L/kWh", help: "Industry average 1.8 L/kWh (LBNL 2016)" },
+    { key: "cfe", label: "Carbon-free electricity", min: 0, max: 100, step: 1, digits: 0, unit: " %", help: "Share of electricity from carbon-free sources" },
+  ];
+
+  function renderCases() {
+    const g = googleResult(), k = g.kpis, w = A.state.weights;
+    const itKwh = (G0.energyTWh * 1e9) / G0.pue, waterL = G0.waterBillionGal * 1e9 * 3.78541;
+    const locT = (G0.energyTWh * 1e9 * G0.gridCI) / 1e6, cfeT = locT * (1 - G0.renewablePct / 100);
+    const src = G0.sources;
+    $("#g-inputs").innerHTML = `<thead><tr><th>Figure</th><th class="n">Value</th><th>Source</th></tr></thead><tbody>
+      <tr><td>Electricity used by data centres</td><td class="n">24 TWh</td><td style="white-space:normal">${esc(src.energyTWh)}</td></tr>
+      <tr><td>Power Usage Effectiveness (PUE)</td><td class="n">1.10</td><td style="white-space:normal">${esc(src.pue)}</td></tr>
+      <tr><td>Water consumed by data centres</td><td class="n">6.1 billion gal</td><td style="white-space:normal">${esc(src.waterBillionGal)}</td></tr>
+      <tr><td>Carbon-free electricity</td><td class="n">64 %</td><td style="white-space:normal">${esc(src.renewablePct)}</td></tr>
+      <tr><td>Grid carbon intensity</td><td class="n">393 g/kWh</td><td style="white-space:normal">${esc(src.gridCI)}</td></tr></tbody>`;
+    $("#g-calc").innerHTML =
+      calcRow("IT energy", "E_IT = E_total ÷ PUE", `24.0 TWh ÷ 1.10 = <b>${fmt(itKwh / 1e9, 2)} TWh</b>`) +
+      calcRow("Overhead (cooling, power losses)", "E_total − E_IT", `24.0 − ${fmt(itKwh / 1e9, 2)} = <b>${fmt(24 - itKwh / 1e9, 2)} TWh</b> (${fmt((1 - 1 / G0.pue) * 100, 1)} % of the total)`) +
+      calcRow("Water in litres", "gallons × 3.785", `6.1 billion × 3.785 = <b>${fmt(waterL / 1e9, 2)} billion L</b>`) +
+      calcRow("Water Usage Effectiveness", "WUE = water (L) ÷ E_IT (kWh)", `${fmt(waterL / 1e9, 2)} bn L ÷ ${fmt(itKwh / 1e9, 2)} bn kWh = <b>${fmt(k.wue, 3)} L/kWh</b>`) +
+      calcRow("Emissions at grid average", "E_total × grid intensity", `24.0 TWh × 393 g/kWh = <b>${fmt(locT / 1e6, 2)} million t CO₂e</b>`) +
+      calcRow("After carbon-free supply", "× (1 − carbon-free share)", `${fmt(locT / 1e6, 2)} × (1 − 0.64) = <b>${fmt(cfeT / 1e6, 2)} million t CO₂e</b>`) +
+      calcRow("Carbon Usage Effectiveness", "CUE = CO₂ (kg) ÷ E_IT (kWh) = PUE × grid × (1 − CFE)", `1.10 × 0.393 × 0.36 = <b>${fmt(k.cue, 3)} kg CO₂e/kWh</b>`);
+    const sE = g.scores.energy.score, sW = g.scores.water.score, sC = g.scores.carbon.score;
+    $("#g-scores").innerHTML =
+      `<p style="font-size:0.85rem;color:var(--ink-2)">Score = 100 × (value − worst) ÷ (best − worst), kept between 0 and 100.</p>` +
+      calcRow("Energy: PUE", "best 1.10, worst 2.00", `100 × (1.10 − 2.00) ÷ (1.10 − 2.00) = <b>${fmt(sE, 1)}</b>`) +
+      calcRow("Water: WUE", "best 0, worst 2.5 L/kWh", `100 × (${fmt(k.wue, 3)} − 2.5) ÷ (0 − 2.5) = <b>${fmt(sW, 1)}</b>`) +
+      calcRow("Carbon: CUE", "best 0, worst 0.70 kg/kWh", `100 × (${fmt(k.cue, 3)} − 0.70) ÷ (0 − 0.70) = <b>${fmt(sC, 1)}</b>`) +
+      calcRow("Cooling, noise, location", "need site data", "Not published by Google, so they are left out");
+    const wsum = w.energy + w.water + w.carbon;
+    $("#g-gs").innerHTML = calcRow("Partial GreenScore", "GS = Σ(weight × score) ÷ Σ weights, over the three scored dimensions",
+      `(${w.energy} × ${fmt(sE, 1)} + ${w.water} × ${fmt(sW, 1)} + ${w.carbon} × ${fmt(sC, 1)}) ÷ ${wsum} = <b>${fmt(g.green.score, 1)} → grade ${g.green.grade.grade}</b>`);
+    A.drawGauge($("#g-gauge"), g.green.score, g.green.grade);
+    $("#g-coverage").textContent = `Covers ${fmt0(g.coverage * 100)} % of the GreenScore weight (energy, water and carbon). A full assessment of one Google site would also need cooling, noise and location data.`;
+    draw("g-chart", {
+      type: "bar",
+      data: { labels: ["Energy (PUE)", "Water (WUE)", "Carbon (CUE)"], datasets: [{ label: "Score", data: [sE, sW, sC], backgroundColor: [css("--c-energy"), css("--c-water"), css("--c-carbon")], borderRadius: 4, maxBarThickness: 48 }] },
+      options: Object.assign(chartBase({ mode: "nearest", x: { min: 0, max: 100, grid: { color: css("--grid") } }, y: { grid: { display: false } }, tooltip: { label: (c) => `Score ${fmt(c.parsed.x, 1)} / 100` } }), { indexAxis: "y" }),
+    });
+    $("#g-legend").innerHTML = "";
+    const ind = G.INDUSTRY_REFERENCE;
+    $("#g-findings").innerHTML = [
+      `<li><b>Energy is excellent.</b> PUE 1.10 means only ${fmt((1 - 1 / G0.pue) * 100, 0)} % of the electricity goes to overhead, against about ${fmt((1 - 1 / ind.pue) * 100, 0)} % at the industry-average PUE of ${ind.pue}. It reaches the top of the scale.</li>`,
+      `<li><b>Water is the weakest dimension.</b> At ${fmt(k.wue, 2)} L/kWh Google uses less than the industry average of ${ind.wue} L/kWh, but evaporative cooling still keeps the water score at ${fmt(sW, 0)}.</li>`,
+      `<li><b>Carbon depends on supply.</b> Buying 64 % carbon-free electricity cuts emissions from ${fmt(locT / 1e6, 1)} to ${fmt(cfeT / 1e6, 1)} million tonnes; the remaining 36 % sets the carbon score at ${fmt(sC, 0)}.</li>`,
+      `<li><b>Biggest lever:</b> reaching 100 % carbon-free electricity would lift the partial GreenScore from ${fmt(g.green.score, 1)} to about 90 (A+). Use the sliders below to show this live.</li>`,
+    ].join("");
+    if (!gw) gw = gBase();
+    $("#g-levers").innerHTML = G_LEVERS.map((l) => `<div class="lever"><label for="gl-${l.key}">${l.label}</label><output id="glo-${l.key}">${fmt(gw[l.key], l.digits)}${l.unit}</output><input type="range" id="gl-${l.key}" min="${l.min}" max="${l.max}" step="${l.step}" value="${gw[l.key]}"><small>${l.help}</small></div>`).join("");
+    renderGoogleWhatIf();
+
+    // Scenario case studies
     // Scenario case studies
     const path = ashburnPath(), kc = karachiCase(), best = bestCase();
     $("#scn-ashburn").innerHTML = `<thead><tr><th>Step</th><th class="n">GreenScore</th><th>Grade</th><th class="n">MWh saved/yr</th><th class="n">tCO₂e avoided/yr</th><th class="n">m³ water saved/yr</th><th></th></tr></thead><tbody>${path.map((p, i) => `<tr><td>${esc(p.label)}</td><td class="n">${fmt(p.score, 1)}</td><td>${p.grade}</td><td class="n">${fmt0(p.delta.energyMWh)}</td><td class="n">${fmt0(p.delta.co2T)}</td><td class="n">${fmt0(p.delta.waterM3)}</td><td><button class="btn small" type="button" data-scn="ashburn" data-step="${i}">Open</button></td></tr>`).join("")}</tbody>`;
@@ -125,6 +161,17 @@
       <tr><td>Cooling</td><td class="n">${fmt(best.scores.cooling.score, 1)}</td><td style="white-space:normal">fans and pumps still use about 7 % of IT energy</td></tr>
       <tr><td>Carbon, noise, location</td><td class="n">100</td><td style="white-space:normal">at the anchors</td></tr>
       <tr><td><b>GreenScore</b></td><td class="n"><b>${fmt(best.score, 1)}</b></td><td>grade ${best.grade}, up from ${fmt(best.base, 1)} without upgrades</td></tr></tbody>`;
+  }
+
+  function renderGoogleWhatIf() {
+    const base = googleResult();
+    const r = G.analyseAnnual(Object.assign({}, G0, { pue: gw.pue, wue: gw.wue, renewablePct: gw.cfe }), A.state.weights);
+    G_LEVERS.forEach((l) => { const o = $("#glo-" + l.key); if (o) o.textContent = fmt(gw[l.key], l.digits) + l.unit; });
+    const d = r.green.score - base.green.score;
+    $("#g-whatif").innerHTML =
+      calcRow("Indicators", "PUE · WUE · CUE = PUE × 0.393 × (1 − CFE)", `PUE ${fmt(gw.pue, 2)} · WUE ${fmt(gw.wue, 2)} L/kWh · CUE ${fmt(r.kpis.cue, 3)} kg/kWh`) +
+      calcRow("Scores", "energy · water · carbon", `${fmt(r.scores.energy.score, 1)} · ${fmt(r.scores.water.score, 1)} · ${fmt(r.scores.carbon.score, 1)}`) +
+      calcRow("Partial GreenScore", `2023 actual: ${fmt(base.green.score, 1)} (${base.green.grade.grade})`, `<b>${fmt(r.green.score, 1)} → grade ${r.green.grade.grade}</b> (${signed(d, 1)} points)`);
   }
 
   /* ---------------------------------------------------------- *
@@ -275,7 +322,7 @@
       { title: "Research question", html: `<p class="s-big">Can one integrated, data-driven framework measure a data centre's environmental impact across energy, water, cooling, carbon, noise and location, and show which interventions improve it most?</p><ul class="s-list"><li>Calculate standard indicators from operating data</li><li>Combine them into a single, transparent GreenScore</li><li>Detect abnormal behaviour and recommend measured improvements</li></ul>` },
       { title: "The GreenDC framework", link: "greenscore", html: `<div class="s-flow">${["Ingest", "Calculate", "Score", "Detect", "Optimise"].map((x, i) => `<div><b>${i + 1}</b><span>${x}</span></div>`).join("")}</div><div class="s-two"><div><h3>Standard indicators</h3><p>PUE, DCiE, WUE, CUE, ERF, CLF and PLF (ISO/IEC 30134, The Green Grid), Scope 2 emissions (GHG Protocol), outdoor sound propagation.</p></div><div><h3>GreenDC contribution</h3><p>Benchmark-anchored 0–100 scores for six dimensions, combined as GS = Σwᵢ·Sᵢ ÷ Σwᵢ, with weather-adjusted anomaly detection and a what-if simulator.</p></div></div>` },
       { title: "Live assessment", link: "overview", html: `<div class="s-two"><div><svg class="gauge" id="s-gauge" viewBox="0 0 220 220"></svg></div><div><p class="s-sub">${esc(A.state.profile.name)} · ${k.days} days</p>${dimBlock(r.scores)}<p class="s-sub">PUE ${fmt(k.pue, 2)} · WUE ${fmt(k.wue, 2)} L/kWh · CUE ${fmt(k.cue, 3)} kg/kWh · ${fmt0(k.co2MktT)} tCO₂e</p></div></div>` },
-      { title: "Real-world check: published data", link: "cases", html: `<table class="s-table"><thead><tr><th>Case</th><th>PUE</th><th>WUE</th><th>CUE</th><th>GreenScore*</th><th>Coverage</th></tr></thead><tbody>${pub.map((p) => `<tr><td>${esc(p.c.name.replace(" (reference)", ""))} (${p.c.year})</td><td>${fmt(p.kpis.pue, 2)}${p.c.pueIsDesign ? "†" : ""}</td><td>${fmt(p.kpis.wue, 2)}</td><td>${fmt(p.kpis.cue, 3)}</td><td><b>${fmt(p.green.score, 1)}</b> ${p.green.grade.grade}</td><td>${fmt0(p.coverage * 100)} %</td></tr>`).join("")}</tbody></table><p class="s-note">* Partial GreenScore over the energy, water and carbon dimensions that public reports cover. † Design PUE; carbon not reported comparably, so coverage is lower. Leading operators score A or A+, while an industry-average facility on the world-average grid scores F.</p>` },
+      { title: "Real-world case: Google, 2023", link: "cases", html: (function () { const g = pub[0]; return `<div class="s-flow" style="grid-template-columns:repeat(4,minmax(0,1fr))">${[["Published", "24 TWh · PUE 1.10 · 6.1 bn gal water · 64 % carbon-free"], ["Indicators", `WUE ${fmt(g.kpis.wue, 2)} L/kWh · CUE ${fmt(g.kpis.cue, 3)} kg/kWh`], ["Scores", `Energy ${fmt(g.scores.energy.score, 0)} · Water ${fmt(g.scores.water.score, 0)} · Carbon ${fmt(g.scores.carbon.score, 0)}`], ["GreenScore", `${fmt(g.green.score, 1)} · grade ${g.green.grade.grade}`]].map((x, n) => `<div><b>${n + 1}</b><span>${x[0]}</span><small class="s-flow-note">${x[1]}</small></div>`).join("")}</div><p class="s-note">Partial GreenScore over the energy, water and carbon dimensions that Google publishes (65 % of the weight). Energy is at the top of the scale, water is the weakest dimension, and 100 % carbon-free electricity would lift the score to about 90 (A+).</p>`; })() },
       { title: "Location matters", link: "location", html: `<div class="s-bars">${locs.map((l) => `<div><span>${esc(l.name)}</span><div class="bar"><i style="width:${l.gs}%;background:var(--c-location)"></i></div><b>${fmt(l.gs, 1)}</b></div>`).join("")}</div><p class="s-note">The same 2 MW facility with evaporative cooling, simulated for one year in eight regions. Grid carbon, water stress and climate alone move the GreenScore by more than 50 points.</p>` },
       { title: "Anomaly detection works better with weather adjustment", link: "evaluation", html: `<table class="s-table"><thead><tr><th>Indicator</th>${Object.values(G.DETECTION_METHODS).map((m) => `<th>${m}</th>`).join("")}</tr></thead><tbody>${["pue", "noise", "wue", "other"].map((m) => `<tr><td>${G.ANOMALY_TARGETS[m].label}</td>${Object.keys(G.DETECTION_METHODS).map((x) => `<td>F1 ${fmt(b.table[m][x].f1, 2)}</td>`).join("")}</tr>`).join("")}</tbody></table><p class="s-note">${b.datasets} simulated years (8 locations × 5 seeds) with injected faults as ground truth, threshold 3.5. Removing the temperature effect first means hot days are not mistaken for cooling faults.</p>` },
       { title: "What-if: Ashburn from C to A", link: "simulator", html: `<table class="s-table"><thead><tr><th>Step</th><th>GreenScore</th><th>MWh/yr</th><th>tCO₂e/yr</th><th>m³/yr</th></tr></thead><tbody>${path.map((p) => `<tr><td>${esc(p.label)}</td><td><b>${fmt(p.score, 1)}</b> ${p.grade}</td><td>${fmt0(p.delta.energyMWh)}</td><td>${fmt0(p.delta.co2T)}</td><td>${fmt0(p.delta.waterM3)}</td></tr>`).join("")}</tbody></table><p class="s-note">Karachi: evaporative ${fmt(kc[0].score, 1)} (${kc[0].grade}) → liquid cooling with the same upgrades ${fmt(kc[3].score, 1)} (${kc[3].grade}). Upper bound of the scale: ${fmt(best.score, 1)} (${best.grade}).</p>` },
@@ -325,12 +372,11 @@
     const el = $("#ov-highlights");
     if (!el) return;
     const pub = publicResults();
-    const meta = pub.find((p) => p.c.id === "meta"), ind = pub.find((p) => p.c.id === "industry");
     const tests = G.selfTest();
     const b = cache["bench-3.5"], mc = cache["mc-uniform"], path = cache.ashburn;
     const card = (href, value, label, note) => `<a class="hl" href="#${href}"><b>${value}</b><span>${label}</span><small>${note}</small></a>`;
     el.innerHTML = [
-      card("cases", `${fmt(meta.green.score, 0)} vs ${fmt(ind.green.score, 0)}`, "Published data", "Meta's fleet against an industry-average facility (partial GreenScore)"),
+      card("cases", `${fmt(pub[0].green.score, 1)} ${pub[0].green.grade.grade}`, "Google case study", "published 2023 figures scored step by step (energy, water, carbon)"),
       card("evaluation", b ? `F1 ${fmt(b.table.pue.residual.f1, 2)}` : "…", "Weather-adjusted detection", b ? `against ${fmt(b.table.pue.rolling.f1, 2)} for a rolling z-score, ${b.datasets} simulated years` : "calculating the benchmark"),
       card("sensitivity", mc ? `ρ ${fmt(mc.meanSpearman, 2)}` : "…", "Robust to weights", mc ? `mean rank correlation over ${fmt0(mc.draws)} random weightings` : "calculating"),
       card("cases", path ? `${path[0].grade} → ${path[path.length - 1].grade}` : "…", "Ashburn what-if", path ? `${fmt(path[0].score, 1)} → ${fmt(path[path.length - 1].score, 1)} in four steps` : "calculating"),
@@ -365,6 +411,14 @@
     setupSUS();
     setupPresent();
     $("#sens-mode").addEventListener("change", renderSensitivity);
+    $("#g-levers").addEventListener("input", (e) => { const key = e.target.id.replace("gl-", ""); if (!gw) gw = gBase(); gw[key] = Number(e.target.value); renderGoogleWhatIf(); });
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest && e.target.closest("[data-gwhat]");
+      if (!b) return;
+      const base = gBase();
+      gw = b.dataset.gwhat === "cfe" ? Object.assign({}, base, { cfe: 100 }) : b.dataset.gwhat === "water" ? Object.assign({}, base, { wue: base.wue / 2 }) : base;
+      renderCases();
+    });
     $("#ev-threshold").addEventListener("change", renderEvaluation);
     $("#ev-metric").addEventListener("change", renderEvaluation);
     document.addEventListener("click", (e) => {

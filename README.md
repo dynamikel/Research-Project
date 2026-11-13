@@ -47,7 +47,7 @@ GreenDC assesses data centre sustainability across six dimensions (energy, water
 - **Recommendations:** rule-based advice quantified by the simulator, plus CSV and JSON export.
 
 **Research**
-- **Real-world cases:** published fleet figures (Google, Meta, Microsoft, industry reference) scored with coverage reported, plus reproducible scenario case studies.
+- **Google case study:** Google's published 2023 figures taken step by step through published figures, indicators, scores and a partial GreenScore, with "what if" sliders. Simulated case studies follow on the same page.
 - **Sensitivity analysis:** one-at-a-time weights, Monte Carlo over weights (Dirichlet) with rank stability, and benchmark-anchor perturbation.
 - **Evaluation:**
   - Detection benchmark: 8 locations × 5 seeds, threshold sweep.
@@ -96,7 +96,7 @@ The Node suite runs the 26 hand-calculated cases, identity checks (PUE = 1 + CLF
 ## Data sources
 
 - **Grid carbon intensity and grid renewable share:** national 2024 values from the Our World in Data energy dataset (Ember; Energy Institute).
-- **Published cases:** Google 2024 Environmental Report; Meta 2024 Sustainability Report; Microsoft sustainability reporting; Uptime Institute 2024; Shehabi et al. (2016).
+- **Google case study:** Google 2024 Environmental Report (2023 data). Industry reference values for context: Uptime Institute 2024 (PUE) and Shehabi et al. (2016) (WUE).
 - **Indicative values:** water stress, climate, tariffs, distances and contracted renewables are indicative and labelled as such on the site.
 
 ## Input data format

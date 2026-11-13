@@ -86,32 +86,23 @@
     distanceM: { label: "Distance to receivers, noise limit", source: "Facility assumption; limits indicative of night-time planning limits", status: "assumption" },
   };
 
-  /* Published fleet-level figures used as real-data case studies.
-   * Values are as reported by each company for the year shown. Where a
-   * figure is derived by GreenDC, `derived` says how. Unknown values are
-   * null and that dimension is excluded (coverage is reported). */
-  const PUBLIC_CASES = [
-    {
-      id: "industry", name: "Industry average (reference)", year: "2024", pue: 1.56, wue: 1.8, gridCI: 471, renewablePct: 0,
-      notes: "PUE: Uptime Institute Global Data Center Survey 2024. WUE: Shehabi et al. (2016), LBNL US data center report. Grid: world average 2024, Our World in Data (Ember). No renewable contracts assumed.",
-      derived: "CUE = PUE × grid intensity",
+  /* Published case study: Google's data centre fleet, 2023.
+   * Values as reported in the Google 2024 Environmental Report. Unknown
+   * values are null and their dimension is excluded (coverage is reported). */
+  const GOOGLE_2023 = {
+    id: "google", name: "Google data centre fleet", year: "2023",
+    pue: 1.10, wue: null, energyTWh: 24.0, waterBillionGal: 6.1, gridCI: 393, renewablePct: 64,
+    sources: {
+      pue: "Google 2024 Environmental Report; Google data centre efficiency page (trailing-twelve-month PUE)",
+      energyTWh: "Google 2024 Environmental Report: data centres used more than 24 TWh in 2023",
+      waterBillionGal: "Google 2024 Environmental Report: data centre water consumption",
+      renewablePct: "Google 2024 Environmental Report: 64 % hourly carbon-free energy (CFE) across its grids",
+      gridCI: "Not from Google: US average 2023, Our World in Data energy dataset (Ember)",
     },
-    {
-      id: "google", name: "Google data centre fleet", year: "2023", pue: 1.10, wue: null, energyTWh: 24.0, waterBillionGal: 6.1, gridCI: 393, renewablePct: 64,
-      notes: "Google 2024 Environmental Report (2023 data): fleet TTM PUE 1.10, data centre electricity >24 TWh, data centre water consumption 6.1 billion gallons, 64 % hourly carbon-free energy (CFE). Grid: US average 2023, Our World in Data (Ember).",
-      derived: "WUE = 6.1 bn gal × 3.785 L ÷ (24 TWh ÷ 1.10). CFE % used in place of contracted renewables. Grid intensity assumed US average because most of the fleet is in the US.",
-    },
-    {
-      id: "meta", name: "Meta data centre fleet", year: "2023", pue: 1.09, wue: 0.20, gridCI: 393, renewablePct: 100,
-      notes: "Meta 2024 Sustainability Report (2023 data): average PUE 1.09, WUE 0.20 L/kWh, operations supported by 100 % renewable energy. Grid: US average 2023, Our World in Data (Ember).",
-      derived: "Market-based CUE is zero because all electricity is matched with renewables.",
-    },
-    {
-      id: "microsoft", name: "Microsoft datacenter fleet", year: "FY2024", pue: 1.12, pueIsDesign: true, wue: 0.30, gridCI: null, renewablePct: null,
-      notes: "Microsoft: average WUE 0.30 L/kWh (water withdrawal basis); newest-generation design PUE 1.12 (no fleet operating PUE found). No comparable renewable share used.",
-      derived: "PUE is a design value, so its energy score is indicative only. Carbon is excluded.",
-    },
-  ];
+  };
+  const PUBLIC_CASES = [GOOGLE_2023];
+  // Industry reference used for context only (not scored as a case).
+  const INDUSTRY_REFERENCE = { pue: 1.56, pueSource: "Uptime Institute Global Data Center Survey 2024", wue: 1.8, wueSource: "Shehabi et al. (2016), LBNL" };
 
   // Cooling architectures used by the simulator.
   const COOLING_SYSTEMS = {
@@ -951,13 +942,13 @@
       ["SUS, neutral answers", "all answers 3 → 10 × 2 × 2.5", susScore([3, 3, 3, 3, 3, 3, 3, 3, 3, 3]), 50],
       ["SUS, best answers", "odd 5, even 1 → 10 × 4 × 2.5", susScore([5, 1, 5, 1, 5, 1, 5, 1, 5, 1]), 100],
       ["Spearman ρ, reversed ranks", "1 − 6·Σd² ÷ (n(n²−1)), n = 4", spearman([1, 2, 3, 4], [4, 3, 2, 1]), -1],
-      ["Derived WUE (Google 2023)", "6.1e9 × 3.78541 ÷ (24e9 ÷ 1.10)", analyseAnnual(PUBLIC_CASES[1]).kpis.wue, (6.1e9 * 3.78541) / (24e9 / 1.1)],
+      ["Derived WUE (Google 2023)", "6.1e9 × 3.78541 ÷ (24e9 ÷ 1.10)", analyseAnnual(GOOGLE_2023).kpis.wue, (6.1e9 * 3.78541) / (24e9 / 1.1)],
     ];
     return cases.map(([name, working, actual, expected]) => ({ name, working, actual, expected, pass: tol(actual, expected, 1e-4) }));
   }
 
   return {
-    ASSUMPTIONS, selfTest, REGIONAL_SOURCES, PUBLIC_CASES, analyseAnnual,
+    ASSUMPTIONS, selfTest, REGIONAL_SOURCES, PUBLIC_CASES, GOOGLE_2023, INDUSTRY_REFERENCE, analyseAnnual,
     weightOAT, monteCarloWeights, anchorSensitivity, spearman, ranks, dirichlet,
     ANOMALY_TARGETS, DETECTION_METHODS, benchmarkDetection, detectionSweep,
     SUS_ITEMS, susScore, susAdjective,
