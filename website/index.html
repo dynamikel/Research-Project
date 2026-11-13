@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GreenDC</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="GreenDC: an integrated, data-driven framework for sustainable data centre management across energy, water, cooling, carbon, noise and location.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" aria-label="Main navigation">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="5" y="3" width="22" height="26" rx="3" fill="none" stroke="#3fb8a6" stroke-width="2"/>
+        <line x1="9" y1="10" x2="23" y2="10" stroke="#cfe0dc" stroke-width="2"/>
+        <line x1="9" y1="16" x2="23" y2="16" stroke="#cfe0dc" stroke-width="2"/>
+        <line x1="9" y1="22" x2="17" y2="22" stroke="#cfe0dc" stroke-width="2"/>
+        <circle cx="21.5" cy="22" r="2" fill="#3fb8a6"/>
+      </svg>
+      <div><div class="brand-name">GreenDC</div><div class="brand-sub">Sustainability framework</div></div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-group">
+        <div class="nav-label">Framework</div>
+        <a href="#overview">Overview</a>
+        <a href="#data">Data &amp; facility</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Six dimensions</div>
+        <a href="#energy"><i class="led" style="background:var(--c-energy)"></i>Energy<span class="score-pill" data-pill="energy"></span></a>
+        <a href="#water"><i class="led" style="background:var(--c-water)"></i>Water<span class="score-pill" data-pill="water"></span></a>
+        <a href="#cooling"><i class="led" style="background:var(--c-cooling)"></i>Cooling<span class="score-pill" data-pill="cooling"></span></a>
+        <a href="#carbon"><i class="led" style="background:var(--c-carbon)"></i>Carbon<span class="score-pill" data-pill="carbon"></span></a>
+        <a href="#noise"><i class="led" style="background:var(--c-noise)"></i>Noise<span class="score-pill" data-pill="noise"></span></a>
+        <a href="#location"><i class="led" style="background:var(--c-location)"></i>Location<span class="score-pill" data-pill="location"></span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Analytics</div>
+        <a href="#greenscore">GreenScore</a>
+        <a href="#anomalies">Anomaly detection</a>
+        <a href="#forecast">Predictive model</a>
+        <a href="#simulator">What-if simulator</a>
+        <a href="#recommendations">Recommendations</a>
+        <a href="#methodology">Methodology</a>
+      </div>
+    </nav>
+    <div class="rail-foot">Research prototype · free &amp; open<br>All calculations run in your browser.</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="facility"><strong id="tb-name">Facility</strong><span id="tb-period">–</span></div>
+      <span class="source-tag" id="tb-source">Simulated</span>
+      <div class="spacer"></div>
+      <span class="chip-score">GreenScore <b id="tb-score">–</b> <span id="tb-grade"></span></span>
+    </header>
+
+    <main class="content" id="content">
+
+      <!-- ================= OVERVIEW ================= -->
+      <section class="page" data-page="overview">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Integrated data-driven framework</div>
+            <h1>Green<span>DC</span></h1>
+            <p class="lede">Sustainable data centre management and optimisation across six dimensions: energy, water, cooling, carbon, noise and location. GreenDC turns operating data into PUE, WUE, CUE and acoustic indicators, combines them into one GreenScore, flags anomalies, and tests resource-saving scenarios.</p>
+            <div class="btns" style="margin-top:16px">
+              <a class="btn primary" href="#data" style="text-decoration:none">Load or simulate data</a>
+              <a class="btn" href="#simulator" style="text-decoration:none">Open the what-if simulator</a>
+            </div>
+          </div>
+          <svg class="gauge" id="gauge" viewBox="0 0 220 220" role="img" aria-label="GreenScore gauge"></svg>
+        </div>
+
+        <div class="kpis" id="ov-kpis"></div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Six sustainability dimensions</h2><p>Each score is 0–100. Select a dimension to see its full calculation.</p></div>
+          <div class="dims" id="ov-dims"></div>
+        </div>
+
+        <div class="split">
+          <div class="panel">
+            <div class="panel-head"><h3>Dimension profile</h3><p>Higher is better on every axis</p></div>
+            <div class="chart tall"><canvas id="ov-radar" aria-label="Radar chart of the six dimension scores"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3>How the framework works</h3>
+            <div class="flow" style="grid-template-columns:minmax(0,1fr)">
+              <div><b>Ingest</b>Daily facility data from a CSV export, sensors, or the built-in physics-informed simulator.</div>
+              <div><b>Calculate</b>PUE, DCiE, WUE, CLF, CER, CUE, Scope 2 emissions and boundary noise levels.</div>
+              <div><b>Score</b>Normalise each indicator against benchmarks and weight them into the GreenScore.</div>
+              <div><b>Detect</b>Rolling z-score, IQR and weather-adjusted residual methods flag abnormal days.</div>
+              <div><b>Optimise</b>Simulate interventions and rank recommendations by GreenScore gain.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Abstract</h3>
+          <div class="prose">
+            <p>Data centres are essential to the digital economy, but their growing demand for electricity, water and cooling contributes to environmental challenges. Existing monitoring approaches often focus on individual efficiency metrics, which makes the overall environmental impact of a facility hard to understand.</p>
+            <p>GreenDC proposes an integrated, data-driven framework for assessing and improving data centre sustainability across six dimensions: energy consumption, water usage, cooling efficiency, carbon emissions, noise pollution and location-based environmental impact. The prototype processes publicly available and simulated datasets to calculate indicators such as Power Usage Effectiveness (PUE), Water Usage Effectiveness (WUE) and estimated carbon emissions. A unified GreenScore summarises performance across the six dimensions, supported by visualisations, anomaly detection, recommendations and a what-if simulator.</p>
+            <p>The framework is designed to scale to real-time sensor data, multiple data centres and regional environmental datasets.</p>
+          </div>
+          <div class="keywords">
+            <span>Data Centre Sustainability</span><span>Sustainable Computing</span><span>Energy Optimization</span><span>Water Usage Effectiveness</span><span>Power Usage Effectiveness</span><span>Smart Cooling</span><span>Carbon Footprint Analysis</span><span>Data Analytics</span><span>Anomaly Detection</span><span>Environmental Impact Assessment</span><span>Predictive Analytics</span><span>Sustainability Optimization</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= DATA ================= -->
+      <section class="page" data-page="data">
+        <div class="page-head">
+          <div class="eyebrow">Step 1 · Ingest</div>
+          <h1>Data &amp; facility profile</h1>
+          <p class="lede">Generate a simulated year of operations for a chosen location and cooling design, or upload your own daily CSV. Every page recalculates from this dataset.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Simulate a facility</h3><p>Physics-informed model with injected faults</p></div>
+            <form class="form" id="sim-form">
+              <div class="field"><label for="f-location">Location preset</label><select id="f-location"></select></div>
+              <div class="field"><label for="f-cooling">Cooling system</label><select id="f-cooling"></select></div>
+              <div class="field"><label for="f-capacity">IT capacity (MW)</label><input id="f-capacity" type="number" min="0.1" max="200" step="0.1" value="2"></div>
+              <div class="field"><label for="f-econ">Economiser adoption (%)</label><input id="f-econ" type="number" min="0" max="100" step="5" value="60"></div>
+              <div class="field"><label for="f-days">Days to simulate</label><input id="f-days" type="number" min="30" max="1095" step="1" value="365"></div>
+              <div class="field"><label for="f-seed">Random seed</label><input id="f-seed" type="number" min="1" step="1" value="42"><small>Same seed, same dataset</small></div>
+            </form>
+            <label style="display:flex;gap:8px;align-items:center;font-size:0.88rem"><input type="checkbox" id="f-anom" checked> Inject faults (cooling, leaks, noise, UPS) as ground truth</label>
+            <div class="btns"><button class="btn primary" id="btn-generate" type="button">Generate dataset</button></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Upload your own data</h3><p>Daily rows, comma separated</p></div>
+            <p style="font-size:0.88rem;color:var(--ink-2)">Required columns: <code>date, it_kwh, cooling_kwh, other_kwh, water_l</code>. Optional: <code>temp_c, it_util_pct, noise_dba, grid_ci, event</code>. Missing optional columns switch off the indicators that need them.</p>
+            <div class="btns">
+              <label class="btn primary file-btn">Choose CSV file<input type="file" id="f-upload" accept=".csv,text/csv"></label>
+              <button class="btn" id="btn-template" type="button">Download template</button>
+              <button class="btn" id="btn-export-data" type="button">Download current dataset</button>
+            </div>
+            <div class="msg hidden" id="upload-msg" role="status"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Facility &amp; regional parameters</h3><p>Edit any value; scores update immediately</p></div>
+          <form class="form" id="profile-form">
+            <div class="field"><label for="p-name">Facility name</label><input id="p-name" type="text"></div>
+            <div class="field"><label for="p-gridCI">Grid carbon intensity (gCO₂e/kWh)</label><input id="p-gridCI" type="number" min="0" step="1"><small>Used when the data has no grid_ci column</small></div>
+            <div class="field"><label for="p-renewablePct">Renewable supply (%)</label><input id="p-renewablePct" type="number" min="0" max="100" step="1"></div>
+            <div class="field"><label for="p-waterStress">Water stress (0–5)</label><input id="p-waterStress" type="number" min="0" max="5" step="0.1"><small>WRI Aqueduct scale</small></div>
+            <div class="field"><label for="p-distanceM">Nearest receiver (m)</label><input id="p-distanceM" type="number" min="1" step="1"></div>
+            <div class="field"><label for="p-noiseLimit">Noise limit (dB(A))</label><input id="p-noiseLimit" type="number" min="20" max="90" step="1"></div>
+            <div class="field"><label for="p-priceKwh">Electricity price (USD/kWh)</label><input id="p-priceKwh" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="p-priceWaterM3">Water price (USD/m³)</label><input id="p-priceWaterM3" type="number" min="0" step="0.1"></div>
+            <div class="field"><label for="p-fcThreshold">Economiser threshold (°C)</label><input id="p-fcThreshold" type="number" min="-10" max="40" step="0.5"></div>
+          </form>
+        </div>
+
+        <div class="kpis" id="data-summary"></div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Dataset preview</h3><p id="data-count"></p></div>
+          <div class="table-wrap"><table id="data-table"></table></div>
+        </div>
+      </section>
+
+      <!-- ================= DIMENSION PAGES (rendered by app.js) ================= -->
+      <section class="page" data-page="energy" id="page-energy"></section>
+      <section class="page" data-page="water" id="page-water"></section>
+      <section class="page" data-page="cooling" id="page-cooling"></section>
+      <section class="page" data-page="carbon" id="page-carbon"></section>
+      <section class="page" data-page="noise" id="page-noise"></section>
+      <section class="page" data-page="location" id="page-location"></section>
+
+      <!-- ================= GREENSCORE ================= -->
+      <section class="page" data-page="greenscore">
+        <div class="page-head">
+          <div class="eyebrow">Step 3 · Score</div>
+          <h1>GreenScore</h1>
+          <p class="lede">The GreenScore is the weighted mean of the six dimension scores. Adjust the weights to reflect local priorities, such as a higher water weight in an arid region.</p>
+        </div>
+        <div class="split">
+          <div class="panel">
+            <div class="panel-head"><h3>Dimension weights</h3><button class="btn small" id="btn-reset-weights" type="button">Reset to default</button></div>
+            <div id="weights"></div>
+          </div>
+          <div class="panel" style="align-items:center">
+            <svg class="gauge" id="gauge-2" viewBox="0 0 220 220" role="img" aria-label="GreenScore gauge"></svg>
+            <div class="calc" style="width:100%"><div class="calc-row"><span class="c-name">GreenScore</span><span class="c-formula">GS = Σ(wᵢ · Sᵢ) ÷ Σ wᵢ</span><span class="c-sub" id="gs-sub"></span></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Contribution by dimension</h3>
+          <div class="table-wrap"><table id="gs-table"></table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Every sub-indicator</h3><p>Score = clamp(100 × (value − worst) ÷ (best − worst), 0, 100)</p></div>
+          <div class="table-wrap"><table id="gs-sub-table"></table></div>
+        </div>
+        <div class="panel">
+          <h3>Grade scale</h3>
+          <div class="table-wrap"><table id="grade-table"></table></div>
+        </div>
+      </section>
+
+      <!-- ================= ANOMALIES ================= -->
+      <section class="page" data-page="anomalies">
+        <div class="page-head">
+          <div class="eyebrow">Step 4 · Detect</div>
+          <h1>Anomaly detection</h1>
+          <p class="lede">Find days whose behaviour departs from the facility's normal pattern. The weather-adjusted method removes the temperature effect first, so a hot day is not mistaken for a cooling fault.</p>
+        </div>
+        <div class="panel">
+          <form class="form" id="anom-form">
+            <div class="field"><label for="a-metric">Indicator</label>
+              <select id="a-metric">
+                <option value="pue">PUE</option>
+                <option value="clf">Cooling Load Factor</option>
+                <option value="wue">WUE (L/kWh)</option>
+                <option value="noise">Boundary noise (dB(A))</option>
+                <option value="it">IT energy (kWh)</option>
+                <option value="other">Distribution losses (kWh)</option>
+              </select></div>
+            <div class="field"><label for="a-method">Method</label>
+              <select id="a-method">
+                <option value="residual">Weather-adjusted residual (robust z)</option>
+                <option value="rolling">Rolling z-score</option>
+                <option value="iqr">IQR fences (Tukey)</option>
+              </select></div>
+            <div class="field"><label for="a-threshold">Threshold (z or 2×IQR k)</label><input id="a-threshold" type="number" min="1" max="8" step="0.25" value="3.5"></div>
+            <div class="field"><label for="a-window">Rolling window (days)</label><input id="a-window" type="number" min="7" max="60" step="1" value="14"></div>
+          </form>
+        </div>
+        <div class="kpis" id="anom-kpis"></div>
+        <div class="panel">
+          <div class="panel-head"><h3 id="anom-title">Daily series</h3><div class="legend" id="anom-legend"></div></div>
+          <div class="chart tall"><canvas id="anom-chart" aria-label="Daily indicator with flagged anomalies"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Flagged days</h3><p id="anom-method-note"></p></div>
+          <div class="table-wrap"><table id="anom-table"></table></div>
+        </div>
+      </section>
+
+      <!-- ================= FORECAST ================= -->
+      <section class="page" data-page="forecast">
+        <div class="page-head">
+          <div class="eyebrow">Predictive analytics</div>
+          <h1>Weather-driven predictive model</h1>
+          <p class="lede">Ordinary least squares regression of an indicator on outdoor temperature. Use it to predict tomorrow's PUE from a weather forecast, or to estimate the effect of a warmer climate on the whole year.</p>
+        </div>
+        <div class="panel">
+          <form class="form" id="fc-form">
+            <div class="field"><label for="fc-target">Predict</label>
+              <select id="fc-target">
+                <option value="pue">PUE</option>
+                <option value="cooling">Cooling energy (kWh/day)</option>
+                <option value="wue">WUE (L/kWh)</option>
+                <option value="noise">Boundary noise (dB(A))</option>
+              </select></div>
+            <div class="field"><label for="fc-temp">Forecast temperature (°C)</label><input id="fc-temp" type="number" step="0.5" value="30"></div>
+            <div class="field"><label for="fc-warming">Climate warming scenario (+°C)</label><input id="fc-warming" type="number" step="0.5" min="0" max="6" value="2"></div>
+          </form>
+        </div>
+        <div class="kpis" id="fc-kpis"></div>
+        <div class="split">
+          <div class="panel">
+            <div class="panel-head"><h3 id="fc-title">Indicator vs outdoor temperature</h3><div class="legend" id="fc-legend"></div></div>
+            <div class="chart tall"><canvas id="fc-chart" aria-label="Scatter plot with regression line"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3>Model calculation</h3>
+            <div class="calc" id="fc-calc"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SIMULATOR ================= -->
+      <section class="page" data-page="simulator">
+        <div class="page-head">
+          <div class="eyebrow">Step 5 · Optimise</div>
+          <h1>What-if simulator</h1>
+          <p class="lede">Apply interventions to every day of the dataset and compare the scenario with the baseline. Savings are annualised.</p>
+        </div>
+        <div class="split">
+          <div class="panel">
+            <div class="panel-head"><h3>Interventions</h3><div class="btns" id="presets"></div></div>
+            <div id="levers"></div>
+          </div>
+          <div class="panel">
+            <h3>Annual savings</h3>
+            <div class="kpis" id="sim-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+            <div class="chart"><canvas id="sim-chart" aria-label="Baseline and scenario dimension scores"></canvas></div>
+            <div class="legend" id="sim-legend"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Baseline vs scenario</h3>
+          <div class="table-wrap"><table id="sim-table"></table></div>
+        </div>
+      </section>
+
+      <!-- ================= RECOMMENDATIONS ================= -->
+      <section class="page" data-page="recommendations">
+        <div class="page-head">
+          <div class="eyebrow">Decision support</div>
+          <h1>Sustainability recommendations</h1>
+          <p class="lede">Rules check each indicator against good practice. Every recommendation is then run through the simulator, so its savings and GreenScore gain come from your data. They are ranked by GreenScore gain.</p>
+        </div>
+        <div class="panel" id="recs"></div>
+        <div class="panel">
+          <div class="panel-head"><h3>Export the assessment</h3><p>Daily indicators and the full scored report</p></div>
+          <div class="btns">
+            <button class="btn" id="btn-export-metrics" type="button">Download daily indicators (CSV)</button>
+            <button class="btn" id="btn-export-report" type="button">Download report (JSON)</button>
+            <button class="btn" id="btn-copy-report" type="button">Copy report to clipboard</button>
+          </div>
+          <div class="msg hidden" id="export-msg" role="status"></div>
+        </div>
+      </section>
+
+      <!-- ================= METHODOLOGY ================= -->
+      <section class="page" data-page="methodology">
+        <div class="page-head">
+          <div class="eyebrow">Reference</div>
+          <h1>Methodology</h1>
+          <p class="lede">Every formula, benchmark and modelling assumption used in GreenDC. The same equations are implemented in <code>website/assets/engine.js</code> and in the Python reference module <code>python/greendc.py</code>.</p>
+        </div>
+
+        <div class="panel">
+          <h2>Indicators</h2>
+          <div class="formula-list">
+            <div class="calc-row"><span class="c-name">Power Usage Effectiveness (ISO/IEC 30134-2)</span><span class="c-formula">PUE = E_total ÷ E_IT,  E_total = E_IT + E_cooling + E_other</span></div>
+            <div class="calc-row"><span class="c-name">Data Centre infrastructure Efficiency</span><span class="c-formula">DCiE = E_IT ÷ E_total × 100 %</span></div>
+            <div class="calc-row"><span class="c-name">Water Usage Effectiveness, site (ISO/IEC 30134-9)</span><span class="c-formula">WUE = water (L) ÷ E_IT (kWh)</span></div>
+            <div class="calc-row"><span class="c-name">WUE, source-inclusive</span><span class="c-formula">WUE_src = (water + EWIF × E_total) ÷ E_IT,  EWIF = 1.8 L/kWh</span></div>
+            <div class="calc-row"><span class="c-name">Cooling Load Factor</span><span class="c-formula">CLF = E_cooling ÷ E_IT</span></div>
+            <div class="calc-row"><span class="c-name">Cooling Efficiency Ratio (system COP)</span><span class="c-formula">CER = heat removed ÷ E_cooling ≈ E_IT ÷ E_cooling</span></div>
+            <div class="calc-row"><span class="c-name">Partial PUE of cooling</span><span class="c-formula">pPUE_cool = (E_IT + E_cooling) ÷ E_IT</span></div>
+            <div class="calc-row"><span class="c-name">Free-cooling utilisation</span><span class="c-formula">FCU = days(T &lt; T_fc and CLF &lt; 0.15) ÷ days(T &lt; T_fc)</span></div>
+            <div class="calc-row"><span class="c-name">Scope 2 emissions, location-based</span><span class="c-formula">CO₂_loc = Σ E_total,d × CI_d ÷ 1000  (kg)</span></div>
+            <div class="calc-row"><span class="c-name">Scope 2 emissions, market-based</span><span class="c-formula">CO₂_mkt = CO₂_loc × (1 − RE%)</span></div>
+            <div class="calc-row"><span class="c-name">Carbon Usage Effectiveness (ISO/IEC 30134-8)</span><span class="c-formula">CUE = CO₂_mkt (kg) ÷ E_IT (kWh)</span></div>
+            <div class="calc-row"><span class="c-name">Sound pressure at receiver (hemispherical)</span><span class="c-formula">Lp = Lw − 20·log₁₀(r) − 8</span></div>
+            <div class="calc-row"><span class="c-name">Combining N sources</span><span class="c-formula">L_tot = 10·log₁₀(Σ 10^(Lᵢ/10)) = L₁ + 10·log₁₀(N) for equal units</span></div>
+            <div class="calc-row"><span class="c-name">Fan law for noise</span><span class="c-formula">ΔLw = 50·log₁₀(n₂ ÷ n₁)</span></div>
+            <div class="calc-row"><span class="c-name">Noise margin</span><span class="c-formula">margin = limit − P95(Lp,daily)</span></div>
+            <div class="calc-row"><span class="c-name">Water-stress-weighted footprint</span><span class="c-formula">W_ws = water (m³) × (1 + stress ÷ 5)</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Scoring</h2>
+          <div class="prose">
+            <p>Each sub-indicator is mapped linearly to a 0–100 score between a <em>best</em> anchor (score 100) and a <em>worst</em> anchor (score 0), and clamped. A dimension score is the weighted mean of its sub-indicators; sub-indicators that cannot be computed from the data are left out and the remaining weights are renormalised.</p>
+          </div>
+          <div class="table-wrap"><table id="bench-table"></table></div>
+          <div class="formula-list">
+            <div class="calc-row"><span class="c-name">Energy</span><span class="c-formula">0.8·S(PUE) + 0.2·S(IT utilisation)</span></div>
+            <div class="calc-row"><span class="c-name">Water</span><span class="c-formula">S(WUE site)</span></div>
+            <div class="calc-row"><span class="c-name">Cooling</span><span class="c-formula">0.75·S(CLF) + 0.25·S(FCU)</span></div>
+            <div class="calc-row"><span class="c-name">Carbon</span><span class="c-formula">S(CUE market-based)</span></div>
+            <div class="calc-row"><span class="c-name">Noise</span><span class="c-formula">S(limit − P95 level)</span></div>
+            <div class="calc-row"><span class="c-name">Location</span><span class="c-formula">mean of S(grid CI), S(water stress), S(free-cooling days), S(renewables), S(distance)</span></div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="panel">
+            <h2>Simulation model</h2>
+            <div class="prose">
+              <ul>
+                <li>Outdoor temperature: T(d) = T̄ + A·cos(2π(d − d_peak)/365) + ε, ε ~ N(0, 2.2 °C).</li>
+                <li>IT power: P = P_idle + (P_max − P_idle)·u with P_idle = 0.5·P_max; utilisation u has weekday, growth and noise terms.</li>
+                <li>Free-cooling fraction: f = adoption ÷ (1 + e^((T − T_fc)/1.8)).</li>
+                <li>Chiller COP = max(1.8, 6 − 0.13(T − 10)) × system factor.</li>
+                <li>Cooling energy = E_IT·[(1 − f)/COP + 0.04f + 0.07]; the last term is CRAH and pump fans.</li>
+                <li>Distribution and lighting losses ≈ 8.5 % of IT energy plus a fixed 0.5 % of capacity.</li>
+                <li>Water = E_IT·(a + b·max(0, T − 5))·(1 − 0.6f), with a and b set by the cooling system.</li>
+                <li>Plant sound power: Lw = Lw_unit + 10·log₁₀(N) + 50·log₁₀(fan speed).</li>
+                <li>Injected faults: cooling fault ×1.55 cooling, water leak ×2.1 water, noise spike +9 dB, IT surge ×1.18, UPS fault ×1.9 losses.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>Simulator levers</h2>
+            <div class="prose">
+              <ul>
+                <li>Setpoint raise: cooling × (1 − 0.04·Δ), water × (1 − 0.02·Δ); economiser threshold + Δ.</li>
+                <li>Economiser boost: on days below the threshold, removes a share of cooling above a 0.07·E_IT floor.</li>
+                <li>Virtualisation: E_IT × (1 − r); cooling, losses and water scale with heat load.</li>
+                <li>Loss reduction: E_other × (1 − r) for UPS eco-mode and LED lighting.</li>
+                <li>Renewables: replaces RE% in the market-based emission factor.</li>
+                <li>Water reuse: potable water × (1 − r), with a cooling energy penalty of 7.5 % × r.</li>
+                <li>Noise mitigation: subtracts the attenuation in dB(A) from every daily level.</li>
+                <li>Carbon is valued at USD 85 per tonne CO₂e.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Anomaly detection</h2>
+          <div class="formula-list">
+            <div class="calc-row"><span class="c-name">Rolling z-score</span><span class="c-formula">zₜ = (xₜ − mean(x_{t−w..t−1})) ÷ sd(x_{t−w..t−1}); flag |z| &gt; k</span></div>
+            <div class="calc-row"><span class="c-name">IQR fences</span><span class="c-formula">flag x &lt; Q1 − (k/2)·IQR or x &gt; Q3 + (k/2)·IQR</span></div>
+            <div class="calc-row"><span class="c-name">Weather-adjusted residual</span><span class="c-formula">r = x − (β₀ + β₁T); z = (r − med r) ÷ (1.4826·MAD)</span></div>
+            <div class="calc-row"><span class="c-name">Evaluation</span><span class="c-formula">precision = TP/(TP+FP), recall = TP/(TP+FN), F1 = 2PR/(P+R)</span></div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="panel">
+            <h2>Data dictionary</h2>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Column</th><th>Unit</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>date</code></td><td>YYYY-MM-DD</td><td>Day of operation</td></tr>
+                <tr><td><code>it_kwh</code></td><td>kWh</td><td>Energy delivered to IT equipment</td></tr>
+                <tr><td><code>cooling_kwh</code></td><td>kWh</td><td>Chillers, towers, CRAH, pumps</td></tr>
+                <tr><td><code>other_kwh</code></td><td>kWh</td><td>UPS and distribution losses, lighting</td></tr>
+                <tr><td><code>water_l</code></td><td>L</td><td>Site water consumption</td></tr>
+                <tr><td><code>temp_c</code></td><td>°C</td><td>Daily mean outdoor temperature</td></tr>
+                <tr><td><code>it_util_pct</code></td><td>%</td><td>Average server utilisation</td></tr>
+                <tr><td><code>noise_dba</code></td><td>dB(A)</td><td>Level at the nearest receiver</td></tr>
+                <tr><td><code>grid_ci</code></td><td>gCO₂e/kWh</td><td>Grid carbon intensity that day</td></tr>
+                <tr><td><code>event</code></td><td>text</td><td>Known fault label (optional ground truth)</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <h2>Limitations &amp; references</h2>
+            <div class="prose">
+              <ul>
+                <li>Regional presets are rounded indicative values for research demonstration, not certified data.</li>
+                <li>Noise uses free-field propagation only (no barriers, ground or air absorption as in ISO 9613-2).</li>
+                <li>Linear normalisation anchors are a design choice; adjust them in <code>engine.js</code> for other benchmarks.</li>
+                <li>The Green Grid, <em>PUE, WUE and CUE</em> white papers; ISO/IEC 30134 series (KPIs for data centres).</li>
+                <li>ASHRAE TC 9.9, <em>Thermal Guidelines for Data Processing Environments</em>.</li>
+                <li>GHG Protocol, <em>Scope 2 Guidance</em> (location- and market-based methods).</li>
+                <li>WRI Aqueduct 4.0 water risk atlas; Uptime Institute Global Data Center Survey.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="assets/engine.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
