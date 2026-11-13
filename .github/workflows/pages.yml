@@ -1,9 +1,12 @@
-name: Deploy website to GitHub Pages
+name: Test and deploy website
 
+# Pushes run the tests. Deploying with this workflow is manual (Actions → Run workflow)
+# and is only needed when Settings → Pages → Source is "GitHub Actions". With
+# "Deploy from a branch", GitHub publishes the repository root, and the root
+# index.html forwards visitors to website/.
 on:
   push:
-    branches: [main]
-    paths: ["website/**", ".github/workflows/pages.yml"]
+    branches: [main, "claude/**"]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +32,7 @@ jobs:
         run: python3 tests/test_greendc.py
 
   deploy:
+    if: github.event_name == 'workflow_dispatch'
     needs: test
     runs-on: ubuntu-latest
     environment:

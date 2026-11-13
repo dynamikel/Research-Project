@@ -22,7 +22,8 @@ GreenDC assesses data centre sustainability across six dimensions (energy, water
 | `data/scenarios/*.json` | Importable project files: Ashburn C → A, Karachi liquid retrofit, best case |
 | `scripts/make_scenarios.js` | Regenerates the sample dataset and scenario files |
 | `docs/PRESENTATION_GUIDE.md` | Talk outline, demo script, likely questions with answers, key numbers |
-| `.github/workflows/pages.yml` | Tests the code, then publishes `website/` to GitHub Pages |
+| `.github/workflows/pages.yml` | Runs the tests on every push; can also publish `website/` when Pages uses GitHub Actions |
+| `index.html`, `.nojekyll` | Forward the repository root to the website when Pages deploys from a branch |
 
 ## Website pages
 
